@@ -4,7 +4,7 @@
     if (!productGrid && !selectionGrid) return;
 
     const status = document.querySelector("[data-products-status]");
-    const sourceUrl = window.PRODUCTS_SOURCE_URL || "https://docs.google.com/spreadsheets/d/11fH77jy_3n_FUostUY_Jg3p1tvbaDkpVY2gPF-To9BU/edit?gid=647801755#gid=647801755";
+    const sourceUrl = window.PRODUCTS_SOURCE_URL || "https://docs.google.com/spreadsheets/d/1zwC6GQVksqznd6gi5GWgOtGZe2jfn-_Vpk5jG8HViSY/edit?gid=1723898085#gid=1723898085";
     const cacheSafeSourceUrl = sourceUrl.includes("docs.google.com")
         ? `${sourceUrl}${sourceUrl.includes("?") ? "&" : "?"}_=${Date.now()}`
         : sourceUrl;
