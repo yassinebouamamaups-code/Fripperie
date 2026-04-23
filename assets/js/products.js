@@ -12,16 +12,14 @@
         : sourceUrl;
 
     const fallbackCsv = `id,categorie,nom,prix,promo,selection_moment,description,photos,statut
-hom-001,hommes,Veste en laine vintage,"89,00 €","69,00 €",oui,"Veste seconde main sélectionnée pour sa coupe et son tombé intemporel.","assets/images/hommes.jpg|assets/images/hero-sans-marque.png",disponible
-hom-002,hommes,Manteau classique,"119,00 €",,oui,"Manteau homme à l'allure sobre, idéal pour une silhouette élégante.","assets/images/hommes.jpg",disponible
-fem-001,femmes,Sac en cuir vintage,"129,00 €",,oui,"Sac en cuir au caractère affirmé, choisi pour sa patine et sa tenue.","assets/images/femmes-sans-marque.png|assets/images/accessoires-sans-marque.png",disponible
-fem-002,femmes,Blazer intemporel,"79,00 €","59,00 €",oui,"Blazer femme facile à porter, sélectionné pour sa ligne et son élégance.","assets/images/femmes-sans-marque.png|assets/images/hero-sans-marque.png",disponible
-acc-001,accessoires,Chaîne plaqué or vintage,"45,00 €",,oui,"Chaîne dorée vintage, discrète et lumineuse.","assets/images/logo_fripperie2.png|assets/images/accessoires-sans-marque.png",disponible
-acc-002,accessoires,Lunettes de caractère,"59,00 €",,oui,"Accessoire fort pour signer une silhouette avec subtilité.","assets/images/accessoires-sans-marque.png",disponible`;
+hom-001,hommes,Veste en laine vintage,"89,00 €","69,00 €",oui,"Veste seconde main sélectionnée pour sa coupe et son tombé intemporel.","",disponible
+hom-002,hommes,Manteau classique,"119,00 €",,oui,"Manteau homme à l'allure sobre, idéal pour une silhouette élégante.","",disponible
+fem-001,femmes,Sac en cuir vintage,"129,00 €",,oui,"Sac en cuir au caractère affirmé, choisi pour sa patine et sa tenue.","",disponible
+fem-002,femmes,Blazer intemporel,"79,00 €","59,00 €",oui,"Blazer femme facile à porter, sélectionné pour sa ligne et son élégance.","",disponible
+acc-001,accessoires,Chaîne plaqué or vintage,"45,00 €",,oui,"Chaîne dorée vintage, discrète et lumineuse.","",disponible
+acc-002,accessoires,Lunettes de caractère,"59,00 €",,oui,"Accessoire fort pour signer une silhouette avec subtilité.","",disponible`;
 
-    const DEFAULT_IMAGE_FALLBACK = "assets/images/logo_fripperie2.png";
-    // const PRODUCT_IMAGE_FALLBACKS = {
-    //     "hom-003": ["assets/images/smart-chino.jpg"]};
+    const DEFAULT_IMAGE_FALLBACK = "";
 
     function parseCsv(text) {
         const rows = [];
@@ -108,8 +106,7 @@ acc-002,accessoires,Lunettes de caractère,"59,00 €",,oui,"Accessoire fort pou
             .map((photo) => normalizePhotoUrl(photo))
             .filter(Boolean);
 
-        const localFallbacks = PRODUCT_IMAGE_FALLBACKS[product.id] || [];
-        return [...remotePhotos, ...localFallbacks].filter((photo, index, list) => list.indexOf(photo) === index);
+        return remotePhotos.filter((photo, index, list) => list.indexOf(photo) === index);
     }
 
     function productPrice(product) {
