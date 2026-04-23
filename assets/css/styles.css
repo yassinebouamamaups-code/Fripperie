@@ -1181,11 +1181,11 @@ a {
     background: linear-gradient(135deg, #25d366, #1ebe5d);
 }
 
-.floating-contact--call {
+/* .floating-contact--call {
     right: 32px;
     bottom: 22px;
     background: var(--gold);
-}
+} */
 
 .floating-contact--tiktok,
 .floating-contact--instagram,
@@ -1531,9 +1531,9 @@ a {
         display: none;
     }
 
-    .floating-contact--call {
+    /* .floating-contact--call {
         right: max(32px, env(safe-area-inset-right));
-    }
+    } */
 
     .cart-floating-button {
         right: max(32px, env(safe-area-inset-right));
