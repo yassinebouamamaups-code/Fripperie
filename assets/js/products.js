@@ -11,14 +11,6 @@
         ? `${sourceUrl}${sourceUrl.includes("?") ? "&" : "?"}_=${Date.now()}`
         : sourceUrl;
 
-    const fallbackCsv = `id,categorie,nom,prix,promo,selection_moment,description,photos,statut
-hom-001,hommes,Veste en laine vintage,"89,00 €","69,00 €",oui,"Veste seconde main sélectionnée pour sa coupe et son tombé intemporel.","",disponible
-hom-002,hommes,Manteau classique,"119,00 €",,oui,"Manteau homme à l'allure sobre, idéal pour une silhouette élégante.","",disponible
-fem-001,femmes,Sac en cuir vintage,"129,00 €",,oui,"Sac en cuir au caractère affirmé, choisi pour sa patine et sa tenue.","",disponible
-fem-002,femmes,Blazer intemporel,"79,00 €","59,00 €",oui,"Blazer femme facile à porter, sélectionné pour sa ligne et son élégance.","",disponible
-acc-001,accessoires,Chaîne plaqué or vintage,"45,00 €",,oui,"Chaîne dorée vintage, discrète et lumineuse.","",disponible
-acc-002,accessoires,Lunettes de caractère,"59,00 €",,oui,"Accessoire fort pour signer une silhouette avec subtilité.","",disponible`;
-
     const DEFAULT_IMAGE_FALLBACK = "";
 
     function parseCsv(text) {
@@ -472,9 +464,8 @@ acc-002,accessoires,Lunettes de caractère,"59,00 €",,oui,"Accessoire fort pou
             renderSelection(products);
         })
         .catch(() => {
-            const products = parseCsv(fallbackCsv);
-            renderCatalog(products);
-            renderSelection(products);
+            renderCatalog([]);
+            renderSelection([]);
         })
         .finally(enableGallery);
 })();
