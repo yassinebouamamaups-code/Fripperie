@@ -1,7 +1,8 @@
 (function () {
     const productGrid = document.querySelector("[data-products-grid]");
     const selectionGrid = document.querySelector("[data-selection-grid]");
-    if (!productGrid && !selectionGrid) return;
+    const productDetail = document.querySelector("[data-product-detail]");
+    if (!productGrid && !selectionGrid && !productDetail) return;
 
     const CART_STORAGE_KEY = "laGoutteDeMerCart";
     const WHATSAPP_PHONE = "33766884222";
@@ -111,6 +112,39 @@
         return String(value || "").trim();
     }
 
+    function normalizeCategory(value) {
+        const normalized = clean(value)
+            .toLowerCase()
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .replace(/[^a-z]/g, "");
+
+        if (normalized.startsWith("homme")) return "hommes";
+        if (normalized.startsWith("femme")) return "femmes";
+        if (normalized.startsWith("accessoire")) return "accessoires";
+        return clean(value).toLowerCase();
+    }
+
+    function categoryPage(product) {
+        const category = normalizeCategory(product.categorie);
+        return ["hommes", "femmes", "accessoires"].includes(category) ? `${category}.html` : "index.html";
+    }
+
+    function productPage(product) {
+        return `article.html?id=${encodeURIComponent(clean(product.id))}`;
+    }
+
+    function normalizeStatus(value) {
+        return clean(value)
+            .toLowerCase()
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "");
+    }
+
+    function isUnavailable(product) {
+        return normalizeStatus(product.statut) === "indisponible";
+    }
+
     function escapeHtml(value) {
         const div = document.createElement("div");
         div.textContent = clean(value);
@@ -173,6 +207,32 @@
         return `<p class="${className} price"><span>${price}</span></p>`;
     }
 
+    function sizeMarkup(product, className) {
+        const size = clean(product.taille);
+        if (!size) return "";
+        return `<p class="${className}">Taille : <span>${escapeHtml(size)}</span></p>`;
+    }
+
+    function cartButtonMarkup(product, className) {
+        const unavailable = isUnavailable(product);
+        const label = unavailable ? "Article indisponible" : "Ajouter au panier";
+        return `
+            <button
+                class="button button--small ${className}"
+                type="button"
+                data-add-to-cart
+                data-id="${escapeAttribute(product.id)}"
+                data-name="${escapeAttribute(product.nom)}"
+                data-price="${escapeAttribute(productPrice(product))}"
+                data-category="${escapeAttribute(product.categorie)}"
+                data-image="${escapeAttribute((photosOf(product)[0] || DEFAULT_IMAGE_FALLBACK))}"
+                data-size="${escapeAttribute(product.taille)}"
+                data-unavailable="${unavailable ? "true" : "false"}"
+                ${unavailable ? "disabled aria-disabled=\"true\"" : ""}
+            >${label}</button>
+        `;
+    }
+
     function catalogCard(product) {
         const photos = photosOf(product);
         const mainPhoto = photos[0] || DEFAULT_IMAGE_FALLBACK;
@@ -186,24 +246,21 @@
         return `
             <article class="catalog-card">
                 <div class="catalog-card__media">
-                    <img class="catalog-card__image" src="${mainPhoto}" alt="" data-fallback-photo="${escapeAttribute(fallbackPhoto)}">
+                    <a href="${productPage(product)}" class="catalog-card__link" aria-label="Voir ${escapeAttribute(product.nom)}">
+                        <img class="catalog-card__image" src="${mainPhoto}" alt="" data-fallback-photo="${escapeAttribute(fallbackPhoto)}">
+                    </a>
                 </div>
                 ${photos.length > 1 ? `<div class="catalog-card__thumbs">${thumbnails}</div>` : ""}
                 <div class="catalog-card__content">
                     <p class="catalog-card__status">${product.statut || "disponible"}</p>
-                    <h2>${product.nom}</h2>
+                    <h2><a href="${productPage(product)}" class="catalog-card__title-link">${product.nom}</a></h2>
+                    ${sizeMarkup(product, "catalog-card__size")}
                     <p>${product.description}</p>
                     ${priceMarkup(product, "catalog-card__price")}
-                    <button
-                        class="button button--small catalog-card__cart"
-                        type="button"
-                        data-add-to-cart
-                        data-id="${escapeAttribute(product.id)}"
-                        data-name="${escapeAttribute(product.nom)}"
-                        data-price="${escapeAttribute(productPrice(product))}"
-                        data-category="${escapeAttribute(product.categorie)}"
-                        data-image="${escapeAttribute(mainPhoto)}"
-                    >Ajouter au panier</button>
+                    <div class="catalog-card__actions">
+                        <a href="${productPage(product)}" class="button button--small">Voir l'article</a>
+                        ${cartButtonMarkup(product, "catalog-card__cart")}
+                    </div>
                 </div>
             </article>
         `;
@@ -216,21 +273,44 @@
 
         return `
             <article class="mini-product">
-                <a href="${product.categorie}.html" aria-label="Voir l'article">
+                <a href="${productPage(product)}" aria-label="Voir l'article">
                     <img src="${mainPhoto}" alt="" data-fallback-photo="${escapeAttribute(fallbackPhoto)}">
                     <h3>${product.nom}</h3>
+                    ${sizeMarkup(product, "mini-product__size")}
                     ${priceMarkup(product, "mini-product__price")}
                 </a>
-                <button
-                    class="button button--small mini-product__cart"
-                    type="button"
-                    data-add-to-cart
-                    data-id="${escapeAttribute(product.id)}"
-                    data-name="${escapeAttribute(product.nom)}"
-                    data-price="${escapeAttribute(productPrice(product))}"
-                    data-category="${escapeAttribute(product.categorie)}"
-                    data-image="${escapeAttribute(mainPhoto)}"
-                >Ajouter au panier</button>
+                ${cartButtonMarkup(product, "mini-product__cart")}
+            </article>
+        `;
+    }
+
+    function detailView(product) {
+        const photos = photosOf(product);
+        const mainPhoto = photos[0] || DEFAULT_IMAGE_FALLBACK;
+        const fallbackPhoto = photos[1] || DEFAULT_IMAGE_FALLBACK;
+        const thumbnails = photos.map((photo, index) => `
+            <button class="product-detail__thumb${index === 0 ? " is-active" : ""}" type="button" data-photo="${photo}" aria-label="Voir la photo ${index + 1}">
+                <img src="${photo}" alt="" data-fallback-photo="${escapeAttribute(index === 0 ? fallbackPhoto : DEFAULT_IMAGE_FALLBACK)}">
+            </button>
+        `).join("");
+
+        return `
+            <article class="product-detail-card">
+                <div class="product-detail__media">
+                    <img class="product-detail__image" src="${mainPhoto}" alt="" data-fallback-photo="${escapeAttribute(fallbackPhoto)}">
+                    ${photos.length > 1 ? `<div class="product-detail__thumbs">${thumbnails}</div>` : ""}
+                </div>
+                <div class="product-detail__content">
+                    <p class="catalog-card__status">${product.statut || "disponible"}</p>
+                    <h1>${product.nom}</h1>
+                    ${sizeMarkup(product, "product-detail__size")}
+                    <p class="product-detail__description">${product.description || ""}</p>
+                    ${priceMarkup(product, "product-detail__price")}
+                    <div class="product-detail__actions">
+                        ${cartButtonMarkup(product, "product-detail__cart")}
+                        <a href="${categoryPage(product)}" class="button button--small">Retour categorie</a>
+                    </div>
+                </div>
             </article>
         `;
     }
@@ -238,8 +318,8 @@
     function renderCatalog(products) {
         if (!productGrid) return;
 
-        const category = productGrid.dataset.category;
-        const filtered = products.filter((product) => product.categorie === category);
+        const category = normalizeCategory(productGrid.dataset.category);
+        const filtered = products.filter((product) => normalizeCategory(product.categorie) === category);
         if (!filtered.length) {
             productGrid.innerHTML = `<p class="catalog-empty">Aucun article disponible pour le moment.</p>`;
             if (status) status.textContent = "0 article";
@@ -270,17 +350,36 @@
         selectionGrid.innerHTML = selected.map(miniCard).join("");
     }
 
-    function enableGallery() {
-        if (!productGrid) return;
+    function renderProductDetail(products) {
+        if (!productDetail) return;
 
-        productGrid.addEventListener("click", (event) => {
+        const params = new URLSearchParams(window.location.search);
+        const productId = clean(params.get("id"));
+        if (!productId) {
+            productDetail.innerHTML = `<p class="catalog-empty">Aucun article selectionne.</p>`;
+            return;
+        }
+
+        const product = products.find((item) => clean(item.id) === productId);
+        if (!product) {
+            productDetail.innerHTML = `<p class="catalog-empty">Cet article est introuvable ou n'est plus disponible.</p>`;
+            return;
+        }
+
+        productDetail.innerHTML = detailView(product);
+        document.title = `${product.nom} - La Goutte de Mer Shop`;
+    }
+
+    function enableGallery() {
+        document.addEventListener("click", (event) => {
             const thumb = event.target.closest("[data-photo]");
             if (!thumb) return;
 
-            const card = thumb.closest(".catalog-card");
-            const image = card.querySelector(".catalog-card__image");
+            const card = thumb.closest(".catalog-card, .product-detail-card");
+            if (!card) return;
+            const image = card.querySelector(".catalog-card__image, .product-detail__image");
             image.src = thumb.dataset.photo;
-            card.querySelectorAll(".catalog-card__thumb").forEach((button) => button.classList.remove("is-active"));
+            card.querySelectorAll(".catalog-card__thumb, .product-detail__thumb").forEach((button) => button.classList.remove("is-active"));
             thumb.classList.add("is-active");
         });
     }
@@ -364,12 +463,14 @@
         document.addEventListener("click", (event) => {
             const addButton = event.target.closest("[data-add-to-cart]");
             if (!addButton) return;
+            if (addButton.disabled || addButton.dataset.unavailable === "true") return;
             addToCart({
                 id: addButton.dataset.id,
                 name: addButton.dataset.name,
                 price: addButton.dataset.price,
                 category: addButton.dataset.category,
-                image: addButton.dataset.image
+                image: addButton.dataset.image,
+                size: addButton.dataset.size
             });
             addButton.textContent = "Dans le panier";
             window.setTimeout(() => {
@@ -416,6 +517,7 @@
                     <div>
                         <h3>${escapeHtml(item.name)}</h3>
                         ${item.category ? `<p>${escapeHtml(item.category)}</p>` : ""}
+                        ${item.size ? `<p class="cart-item__size">Taille : ${escapeHtml(item.size)}</p>` : ""}
                         <strong>${escapeHtml(displayPrice(item.price))}</strong>
                     </div>
                     <button type="button" data-remove-cart-item="${escapeAttribute(item.id)}" aria-label="Retirer ${escapeAttribute(item.name)}">&times;</button>
@@ -435,7 +537,7 @@
         ];
 
         items.forEach((item) => {
-            lines.push(`- ${item.name} - ${displayPrice(item.price)}`);
+            lines.push(`- ${item.name}${item.size ? ` (taille ${item.size})` : ""} - ${displayPrice(item.price)}`);
         });
 
         lines.push("");
@@ -464,10 +566,12 @@
             if (!products.length) throw new Error("Aucun produit dans la source");
             renderCatalog(products);
             renderSelection(products);
+            renderProductDetail(products);
         })
         .catch(() => {
             renderCatalog([]);
             renderSelection([]);
+            renderProductDetail([]);
         })
         .finally(enableGallery);
 })();
