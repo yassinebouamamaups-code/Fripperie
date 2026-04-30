@@ -2,7 +2,7 @@
     const productGrid = document.querySelector("[data-products-grid]");
     const selectionGrid = document.querySelector("[data-selection-grid]");
     const productDetail = document.querySelector("[data-product-detail]");
-    if (!productGrid && !selectionGrid && !productDetail) return;
+    const hasProductUi = Boolean(productGrid || selectionGrid || productDetail);
 
     const CART_STORAGE_KEY = "laGoutteDeMerCart";
     const WHATSAPP_PHONE = "33766884222";
@@ -555,6 +555,10 @@
 
     setupCart();
     enableImageFallbacks();
+
+    if (!hasProductUi) {
+        return;
+    }
 
     fetch(cacheSafeSourceUrl)
         .then((response) => {
