@@ -1613,12 +1613,29 @@ a {
     cursor: pointer;
 }
 
+.cart-panel__actions--double {
+    grid-template-columns: 1fr 1.4fr;
+}
+
 .cart-panel__actions a {
     display: flex;
     align-items: center;
     justify-content: center;
     background: var(--gold);
     color: var(--ink);
+}
+
+.cart-panel__primary {
+    background: var(--gold) !important;
+    color: var(--ink) !important;
+}
+
+.cart-panel__note {
+    margin: 0 0 14px;
+    color: var(--muted);
+    font-family: "Cormorant Garamond", Georgia, serif;
+    font-size: 16px;
+    line-height: 1.4;
 }
 
 .cart-panel__actions button:disabled,
@@ -2031,10 +2048,20 @@ a {
     box-shadow: none;
 }
 
+.checkout-actions__primary {
+    font-weight: 700;
+    text-shadow: none;
+}
+
 .checkout-actions__primary:hover,
 .checkout-success__actions a:hover {
     background: #f3cf84;
     color: var(--ink);
+}
+
+.checkout-actions__primary {
+    background: var(--gold) !important;
+    color: var(--ink) !important;
 }
 
 .checkout-success__meta {
