@@ -51,12 +51,12 @@ a {
 .topbar__track {
     display: flex;
     align-items: center;
-    gap: 34px;
+    gap: clamp(72px, 7vw, 120px);
     width: max-content;
     height: 100%;
-    padding: 4px 24px 0;
+    padding: 4px 36px 0;
     will-change: transform;
-    animation: topbar-marquee 24s linear infinite;
+    animation: topbar-marquee 30s linear infinite;
 }
 
 .topbar__item {
