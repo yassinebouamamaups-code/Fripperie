@@ -653,7 +653,7 @@
                             <textarea name="customerNote" rows="3" placeholder="Pr&eacute;cision de livraison, demande particuli&egrave;re, cr&eacute;neau..."></textarea>
                         </label>
                     </div>
-                    <div class="checkout-methods">
+                    <div class="checkout-methods" data-checkout-methods>
                         <h3>Mode de paiement</h3>
                         <div class="checkout-methods__list" data-payment-methods></div>
                     </div>
@@ -697,6 +697,7 @@
             backdrop,
             panel,
             form: panel.querySelector("[data-checkout-form]"),
+            methodsSection: panel.querySelector("[data-checkout-methods]"),
             paymentMethods: panel.querySelector("[data-payment-methods]"),
             stripeSection: panel.querySelector("[data-checkout-stripe]"),
             stripeMount: panel.querySelector("[data-stripe-payment-element]"),
@@ -711,6 +712,7 @@
             submitButton: panel.querySelector(".checkout-actions__primary")
         };
 
+        checkoutElements.stripeSection.hidden = false;
         renderPaymentMethods();
         syncCheckoutPaymentUi();
 
@@ -737,11 +739,6 @@
                 <span class="payment-method__content">
                     <span class="payment-method__brand">
                         ${paymentLogoMarkup(method)}
-                    </span>
-                    <span class="payment-method__meta">
-                        <strong class="payment-method__title">${escapeHtml(method.label)}</strong>
-                        ${method.description ? `<small>${escapeHtml(method.description)}</small>` : ""}
-                        ${isPaymentMethodReady(method) ? "" : `<em>M\u00e9thode de paiement \u00e0 configurer dans assets/js/checkout-config.js</em>`}
                     </span>
                 </span>
             </label>
@@ -771,6 +768,9 @@
 
         const method = getSelectedPaymentMethod();
         const isStripe = method?.id === "stripe";
+        const isPayPal = method?.id === "paypal";
+        const customerReady = hasValidCheckoutCustomerDetails();
+        const shouldShowStripePanel = customerReady && isStripe;
         const stripeMethodCard = checkoutElements.paymentMethods.querySelector(".payment-method--stripe");
 
         checkoutElements.paymentMethods.querySelectorAll(".payment-method").forEach((card) => {
@@ -782,7 +782,24 @@
             stripeMethodCard.insertAdjacentElement("afterend", checkoutElements.stripeSection);
         }
 
-        checkoutElements.stripeSection.hidden = !isStripe;
+        checkoutElements.methodsSection.classList.toggle("checkout-methods--ready", customerReady);
+        checkoutElements.methodsSection.setAttribute("aria-hidden", customerReady ? "false" : "true");
+        checkoutElements.stripeSection.classList.toggle("checkout-stripe--open", shouldShowStripePanel);
+        checkoutElements.stripeSection.setAttribute("aria-hidden", shouldShowStripePanel ? "false" : "true");
+
+        if (!customerReady) {
+            setCheckoutSubmitLabel("Compl\u00e9ter vos informations");
+            checkoutElements.submitButton.disabled = true;
+            checkoutElements.stripeNote.textContent = "";
+            return;
+        }
+
+        if (isPayPal) {
+            setCheckoutSubmitLabel("Payer avec PayPal");
+            checkoutElements.submitButton.disabled = false;
+            checkoutElements.stripeNote.textContent = "";
+            return;
+        }
 
         if (!isStripe) {
             setCheckoutSubmitLabel("Valider et payer");
@@ -836,6 +853,16 @@
             && customer.postalCode
             && customer.city
         );
+    }
+
+    function hasValidCheckoutCustomerDetails() {
+        if (!checkoutElements?.form) return false;
+
+        const requiredFields = ["firstName", "lastName", "email", "phone", "addressLine1", "postalCode", "city"];
+        return requiredFields.every((name) => {
+            const field = checkoutElements.form.elements.namedItem(name);
+            return field instanceof HTMLInputElement && field.checkValidity() && Boolean(clean(field.value));
+        });
     }
 
     function checkoutSignature(items, customer) {
