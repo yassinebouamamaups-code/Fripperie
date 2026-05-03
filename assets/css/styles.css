@@ -36,7 +36,7 @@ a {
 .topbar {
     height: 30px;
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: 1fr;
     align-items: center;
     padding: 0 clamp(16px, 5vw, 70px);
     background: var(--gold);
@@ -46,6 +46,14 @@ a {
     font-weight: 600;
     letter-spacing: 0.08em;
     text-transform: uppercase;
+}
+
+.topbar__track {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    align-items: center;
+    gap: 18px;
+    width: 100%;
 }
 
 .topbar__item {
@@ -64,6 +72,16 @@ a {
     stroke-linecap: round;
     stroke-linejoin: round;
     stroke-width: 1.4;
+}
+
+@keyframes topbar-marquee {
+    from {
+        transform: translate3d(0, 0, 0);
+    }
+
+    to {
+        transform: translate3d(-50%, 0, 0);
+    }
 }
 
 .site-header {
@@ -2126,20 +2144,33 @@ a {
 
 @media (max-width: 720px) {
     .topbar {
-        grid-template-columns: 1fr;
+        display: block;
         min-height: 38px;
-        height: auto;
-        padding-top: 4px;
-        padding-bottom: 5px;
-        overflow: visible;
+        height: 38px;
+        padding: 0;
+        overflow: hidden;
     }
 
-    .topbar__item:nth-child(n+2) {
-        display: none;
+    .topbar__track {
+        display: flex;
+        align-items: center;
+        gap: 28px;
+        width: max-content;
+        min-width: 200%;
+        height: 100%;
+        padding-inline: 18px;
+        animation: topbar-marquee 16s linear infinite;
     }
 
     .topbar__item {
+        flex: 0 0 auto;
+        justify-content: flex-start;
         line-height: 1.25;
+        min-width: max-content;
+    }
+
+    .topbar svg {
+        flex: 0 0 auto;
     }
 
     .site-header {
