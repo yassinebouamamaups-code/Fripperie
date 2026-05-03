@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="160" height="48" viewBox="0 0 160 48" role="img" aria-labelledby="paypalTitle paypalDesc">
+  <title id="paypalTitle">PayPal</title>
+  <desc id="paypalDesc">Wordmark PayPal sur fond bleu clair</desc>
+  <rect width="160" height="48" rx="12" fill="#ffffff"/>
+  <rect x="1.5" y="1.5" width="157" height="45" rx="10.5" fill="none" stroke="#d9e5ff"/>
+  <text x="80" y="30" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="700" fill="#003087" letter-spacing="0.2">PayPal</text>
+</svg>
