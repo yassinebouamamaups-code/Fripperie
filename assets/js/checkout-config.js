@@ -16,14 +16,14 @@ window.SHOP_CHECKOUT_CONFIG = {
     paymentMethods: {
         stripe: {
             enabled: true,
-            label: "Stripe",
-            description: "Paiement par carte bancaire via Stripe.",
+            // label: "Stripe",
+            // description: "Paiement par carte bancaire via Stripe.",
             checkoutUrl: ""
         },
         paypal: {
             enabled: true,
-            label: "PayPal",
-            description: "Paiement securise via PayPal.",
+            // label: "PayPal",
+            // description: "Paiement securise via PayPal.",
             checkoutUrl: ""
         }
     },
