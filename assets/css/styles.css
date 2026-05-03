@@ -1829,13 +1829,14 @@ a {
 
 .checkout-methods.checkout-methods--ready {
     gap: 0;
-    max-height: 760px;
+    max-height: 1400px;
     padding-top: 20px;
     padding-bottom: 20px;
     border-color: rgba(200, 155, 79, 0.18);
     background: rgba(6, 19, 32, 0.62);
     opacity: 1;
     pointer-events: auto;
+    overflow: visible;
     transform: translateY(0);
 }
 
@@ -1994,7 +1995,7 @@ a {
 
 .checkout-stripe.checkout-stripe--open {
     margin: -2px 0 2px;
-    max-height: 360px;
+    max-height: 640px;
     padding: 18px 18px 20px;
     border-color: rgba(200, 155, 79, 0.2);
     opacity: 1;
