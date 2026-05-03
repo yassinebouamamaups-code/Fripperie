@@ -940,15 +940,36 @@
                 ".Tab": {
                     border: "1px solid rgba(200,155,79,0.22)",
                     backgroundColor: "rgba(6,19,32,0.92)",
-                    boxShadow: "none"
+                    boxShadow: "none",
+                    color: "#f6efe4"
+                },
+                ".Tab:hover": {
+                    color: "#fff7ea",
+                    backgroundColor: "rgba(200,155,79,0.08)"
+                },
+                ".TabLabel": {
+                    color: "#f6efe4",
+                    fontWeight: "600"
+                },
+                ".TabIcon": {
+                    color: "#f0d08a",
+                    fill: "#f0d08a"
                 },
                 ".Tab--selected": {
                     borderColor: "#c89b4f",
-                    backgroundColor: "rgba(200,155,79,0.12)"
+                    backgroundColor: "rgba(200,155,79,0.12)",
+                    color: "#fff7ea"
+                },
+                ".Tab--selected .TabLabel": {
+                    color: "#fff7ea"
                 },
                 ".AccordionItem": {
                     border: "1px solid rgba(200,155,79,0.16)",
-                    backgroundColor: "rgba(6,19,32,0.72)"
+                    backgroundColor: "rgba(6,19,32,0.72)",
+                    color: "#f6efe4"
+                },
+                ".AccordionItem .Label": {
+                    color: "#f6efe4"
                 },
                 ".Input": {
                     border: "1px solid rgba(200,155,79,0.28)",
