@@ -713,6 +713,7 @@
         };
 
         checkoutElements.stripeSection.hidden = false;
+        checkoutElements.methodsSection.appendChild(checkoutElements.stripeSection);
         renderPaymentMethods();
         syncCheckoutPaymentUi();
 
@@ -771,16 +772,10 @@
         const isPayPal = method?.id === "paypal";
         const customerReady = hasValidCheckoutCustomerDetails();
         const shouldShowStripePanel = customerReady && isStripe;
-        const stripeMethodCard = checkoutElements.paymentMethods.querySelector(".payment-method--stripe");
-
         checkoutElements.paymentMethods.querySelectorAll(".payment-method").forEach((card) => {
             const input = card.querySelector("input[name='paymentMethod']");
             card.classList.toggle("payment-method--active", Boolean(input?.checked));
         });
-
-        if (stripeMethodCard && checkoutElements.stripeSection.previousElementSibling !== stripeMethodCard) {
-            stripeMethodCard.insertAdjacentElement("afterend", checkoutElements.stripeSection);
-        }
 
         checkoutElements.methodsSection.classList.toggle("checkout-methods--ready", customerReady);
         checkoutElements.methodsSection.setAttribute("aria-hidden", customerReady ? "false" : "true");
