@@ -34,39 +34,46 @@ a {
 }
 
 .topbar {
-    height: 30px;
-    display: grid;
-    grid-template-columns: 1fr;
+    display: block;
+    height: 36px;
     align-items: center;
-    padding: 0 clamp(16px, 5vw, 70px);
+    padding: 0;
+    overflow: hidden;
     background: var(--gold);
     color: #1a1208;
     font-family: "Cinzel", Georgia, serif;
-    font-size: 11px;
-    font-weight: 650;
-    letter-spacing: 0.08em;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.09em;
     text-transform: uppercase;
 }
 
 .topbar__track {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    display: flex;
     align-items: center;
-    gap: 18px;
-    width: 100%;
+    gap: 34px;
+    width: max-content;
+    height: 100%;
+    padding: 4px 24px 0;
+    will-change: transform;
+    animation: topbar-marquee 24s linear infinite;
 }
 
 .topbar__item {
     display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
+    flex: 0 0 auto;
     gap: 9px;
     white-space: nowrap;
+    min-width: max-content;
+    line-height: 1.15;
 }
 
 .topbar svg {
-    width: 15px;
-    height: 15px;
+    width: 16px;
+    height: 16px;
+    flex: 0 0 auto;
     fill: none;
     stroke: currentColor;
     stroke-linecap: round;
@@ -2144,36 +2151,22 @@ a {
 
 @media (max-width: 720px) {
     .topbar {
-        display: block;
         min-height: 42px;
         height: 42px;
-        padding: 0;
-        overflow: hidden;
     }
 
     .topbar__track {
-        display: flex;
-        align-items: center;
         gap: 28px;
-        width: max-content;
-        height: 100%;
         padding: 3px 18px 0;
-        will-change: transform;
         animation: topbar-marquee 18s linear infinite;
     }
 
     .topbar__item {
-        flex: 0 0 auto;
-        justify-content: flex-start;
-        align-items: center;
-        line-height: 1.15;
-        min-width: max-content;
         font-size: 11.8px;
         font-weight: 700;
     }
 
     .topbar svg {
-        flex: 0 0 auto;
         width: 16px;
         height: 16px;
     }
