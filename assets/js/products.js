@@ -747,8 +747,8 @@
         };
 
         checkoutElements.stripeSection.hidden = false;
-        checkoutElements.methodsSection.appendChild(checkoutElements.stripeSection);
         renderPaymentMethods();
+        positionStripeSection();
         syncCheckoutPaymentUi();
 
         backdrop.addEventListener("click", closeCheckout);
@@ -926,6 +926,21 @@
                 </span>
             </label>
         `).join("");
+        positionStripeSection();
+    }
+
+    function positionStripeSection() {
+        if (!checkoutElements?.stripeSection || !checkoutElements?.paymentMethods) {
+            return;
+        }
+
+        const stripeMethodCard = checkoutElements.paymentMethods.querySelector(".payment-method--stripe");
+        if (!stripeMethodCard) {
+            checkoutElements.methodsSection.appendChild(checkoutElements.stripeSection);
+            return;
+        }
+
+        stripeMethodCard.insertAdjacentElement("afterend", checkoutElements.stripeSection);
     }
 
     function getSelectedShippingOptionId() {
@@ -1057,6 +1072,7 @@
             const input = card.querySelector("input[name='paymentMethod']");
             card.classList.toggle("payment-method--active", Boolean(input?.checked));
         });
+        positionStripeSection();
 
         checkoutElements.methodsSection.classList.toggle("checkout-methods--ready", customerReady);
         checkoutElements.methodsSection.setAttribute("aria-hidden", customerReady ? "false" : "true");

@@ -2126,12 +2126,13 @@ a {
 
 .checkout-stripe.checkout-stripe--open {
     margin: -2px 0 2px;
-    max-height: 640px;
+    max-height: 1200px;
     padding: 18px 18px 20px;
     border-color: rgba(200, 155, 79, 0.2);
     opacity: 1;
     transform: translateY(0);
     pointer-events: auto;
+    overflow: visible;
 }
 
 .checkout-stripe__lead,
@@ -2161,7 +2162,7 @@ a {
 }
 
 .checkout-stripe__element {
-    min-height: 86px;
+    min-height: 120px;
     min-width: 0;
 }
 
@@ -2506,6 +2507,10 @@ a {
 }
 
 @media (max-width: 640px) {
+    .checkout-methods.checkout-methods--ready {
+        max-height: 2200px;
+    }
+
     .payment-method__content {
         min-height: 72px;
         padding: 10px 40px 10px 12px;
@@ -2535,8 +2540,17 @@ a {
         padding: 16px 14px 18px;
     }
 
+    .checkout-stripe.checkout-stripe--open {
+        max-height: 1600px;
+        margin-top: 10px;
+    }
+
     .checkout-stripe__surface {
         padding: 14px 12px 14px 16px;
+    }
+
+    .checkout-stripe__element {
+        min-height: 220px;
     }
 
     .checkout-stripe__lead,
