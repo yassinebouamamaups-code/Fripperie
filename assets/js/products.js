@@ -926,7 +926,6 @@
                 </span>
             </label>
         `).join("");
-        positionStripeSection();
     }
 
     function positionStripeSection() {
@@ -937,6 +936,13 @@
         const stripeMethodCard = checkoutElements.paymentMethods.querySelector(".payment-method--stripe");
         if (!stripeMethodCard) {
             checkoutElements.methodsSection.appendChild(checkoutElements.stripeSection);
+            return;
+        }
+
+        if (
+            checkoutElements.stripeSection.parentElement === stripeMethodCard.parentElement
+            && checkoutElements.stripeSection.previousElementSibling === stripeMethodCard
+        ) {
             return;
         }
 
@@ -1001,6 +1007,10 @@
     function handleCheckoutFormChange(event) {
         if (event.target instanceof HTMLInputElement && event.target.name === "paymentMethod") {
             syncCheckoutPaymentUi();
+            if (event.target.value === "stripe") {
+                scheduleStripeAutofillCheck(20);
+            }
+            return;
         }
 
         if (event.target instanceof HTMLInputElement && event.target.name === "shippingOption") {
@@ -1014,14 +1024,15 @@
             return;
         }
 
+        const shouldRefreshShipping = isCheckoutShippingRelevantField(event.target);
         if (
             (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement)
-            && !(event.target instanceof HTMLInputElement && event.target.name === "paymentMethod")
+            && shouldRefreshShipping
         ) {
             scheduleCheckoutShippingRefresh();
         }
 
-        if (getSelectedPaymentMethodId() === "stripe") {
+        if (getSelectedPaymentMethodId() === "stripe" && isStripeCheckoutRelevantField(event.target)) {
             scheduleStripeAutofillCheck();
         }
     }
@@ -1072,7 +1083,6 @@
             const input = card.querySelector("input[name='paymentMethod']");
             card.classList.toggle("payment-method--active", Boolean(input?.checked));
         });
-        positionStripeSection();
 
         checkoutElements.methodsSection.classList.toggle("checkout-methods--ready", customerReady);
         checkoutElements.methodsSection.setAttribute("aria-hidden", customerReady ? "false" : "true");
@@ -1522,6 +1532,38 @@
                 }
             }, delay);
         });
+    }
+
+    function isCheckoutShippingRelevantField(target) {
+        return (
+            target instanceof HTMLInputElement
+            || target instanceof HTMLTextAreaElement
+        ) && [
+            "firstName",
+            "lastName",
+            "email",
+            "phone",
+            "addressLine1",
+            "postalCode",
+            "city",
+            "country"
+        ].includes(clean(target.name));
+    }
+
+    function isStripeCheckoutRelevantField(target) {
+        return (
+            target instanceof HTMLInputElement
+            || target instanceof HTMLTextAreaElement
+        ) && [
+            "firstName",
+            "lastName",
+            "email",
+            "phone",
+            "addressLine1",
+            "postalCode",
+            "city",
+            "country"
+        ].includes(clean(target.name));
     }
 
     async function mountStripePaymentElement(remoteSession, items, customer) {
