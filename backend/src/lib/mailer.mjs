@@ -1,5 +1,5 @@
 import { config } from "../config.mjs";
-import { formatPrice } from "./invoice.mjs";
+import { buildInvoiceHtml, formatPrice } from "./invoice.mjs";
 
 export async function sendOrderEmails(order, invoice) {
   const clientName = `${order.customer.firstName} ${order.customer.lastName}`.trim();
@@ -7,9 +7,15 @@ export async function sendOrderEmails(order, invoice) {
   const invoiceSubject = `${order.invoiceNumber} - Votre facture`;
   const sellerSubject = `${order.invoiceNumber} - Nouvelle commande reglee`;
   const legalLinks = buildLegalLinks();
-  const invoiceAttachment = {
+  const trackingLink = buildTrackingLink(order);
+  const shippingLabelLink = buildShippingLabelLink(order);
+  const clientInvoiceAttachment = {
     filename: invoice.fileName,
-    content: Buffer.from(invoice.html, "utf8").toString("base64")
+    content: Buffer.from(buildInvoiceHtml(order, { audience: "client" }), "utf8").toString("base64")
+  };
+  const sellerInvoiceAttachment = {
+    filename: invoice.fileName,
+    content: Buffer.from(buildInvoiceHtml(order, { audience: "seller" }), "utf8").toString("base64")
   };
 
   await sendEmail({
@@ -20,6 +26,8 @@ export async function sendOrderEmails(order, invoice) {
       <p>Merci pour votre commande chez ${escapeHtml(config.seller.brandName)}.</p>
       <p>Commande : <strong>${escapeHtml(order.orderNumber)}</strong><br>Montant : <strong>${escapeHtml(formatPrice(order.totalAmount))}</strong></p>
       ${buildItemsList(order)}
+      ${buildShippingSummary(order, { audience: "client" })}
+      ${trackingLink ? `<p><strong>Suivi de livraison :</strong><br><a href="${escapeHtml(trackingLink)}">${escapeHtml(trackingLink)}</a></p>` : ""}
       <p>Votre facture est envoyee dans un second email.</p>
       ${legalLinks}
     `),
@@ -37,7 +45,7 @@ export async function sendOrderEmails(order, invoice) {
       ${legalLinks}
     `),
     replyTo: config.seller.email,
-    attachments: [invoiceAttachment],
+    attachments: [clientInvoiceAttachment],
     debugLabel: `client-invoice:${clientName}`
   });
 
@@ -49,13 +57,41 @@ export async function sendOrderEmails(order, invoice) {
       <p>Commande : <strong>${escapeHtml(order.orderNumber)}</strong><br>Facture : <strong>${escapeHtml(order.invoiceNumber)}</strong></p>
       <p>Client : ${escapeHtml(clientName)}<br>Email : ${escapeHtml(order.customer.email)}<br>Telephone : ${escapeHtml(order.customer.phone)}</p>
       ${buildItemsList(order)}
+      ${buildShippingSummary(order, { audience: "seller" })}
+      ${shippingLabelLink ? `<p><strong>Etiquette d'envoi :</strong><br><a href="${escapeHtml(shippingLabelLink)}">${escapeHtml(shippingLabelLink)}</a></p>` : ""}
       <p>Total : <strong>${escapeHtml(formatPrice(order.totalAmount))}</strong></p>
       <p>Identifiant capture PayPal : ${escapeHtml(order.paypal.captureId || "")}</p>
       ${legalLinks}
     `),
     replyTo: order.customer.email,
-    attachments: [invoiceAttachment],
+    attachments: [sellerInvoiceAttachment],
     debugLabel: "seller-notification"
+  });
+}
+
+export async function sendShippingStatusEmail(order) {
+  const trackingLink = buildTrackingLink(order);
+  const shipment = order.shipping?.shipment || {};
+  const statusLabel = clean(shipment.statusMessage) || "Mise a jour de livraison";
+  const selectedServicePoint = order.shipping?.selectedServicePoint;
+  const pickupHint = selectedServicePoint && normalizeStatusLabel(statusLabel) === "awaiting customer pickup"
+    ? `<p>Votre colis vous attend au point relais <strong>${escapeHtml(selectedServicePoint.name || "")}</strong>${formatServicePointLine(selectedServicePoint)}.</p>`
+    : "";
+
+  await sendEmail({
+    to: order.customer.email,
+    subject: `${order.orderNumber} - ${statusLabel}`,
+    html: wrapEmail(`
+      <p>Bonjour ${escapeHtml(order.customer.firstName)},</p>
+      <p>Le statut de votre livraison vient d'etre mis a jour.</p>
+      <p>Commande : <strong>${escapeHtml(order.orderNumber)}</strong><br>Statut : <strong>${escapeHtml(statusLabel)}</strong></p>
+      ${buildShippingSummary(order, { audience: "client" })}
+      ${pickupHint}
+      ${trackingLink ? `<p><strong>Suivi de livraison :</strong><br><a href="${escapeHtml(trackingLink)}">${escapeHtml(trackingLink)}</a></p>` : ""}
+      ${buildLegalLinks()}
+    `),
+    replyTo: config.seller.email,
+    debugLabel: `client-shipping-status:${order.orderNumber}`
   });
 }
 
@@ -108,6 +144,62 @@ function wrapEmail(content) {
 function buildItemsList(order) {
   const rows = order.items.map((item) => `<li>${escapeHtml(item.name)}${item.size ? ` - taille ${escapeHtml(item.size)}` : ""} x${item.quantity} - ${escapeHtml(formatPrice(item.unitAmount * item.quantity))}</li>`).join("");
   return `<ul>${rows}</ul>`;
+}
+
+function buildShippingSummary(order, { audience = "client" } = {}) {
+  if (!order.shipping?.selectedOption) return "";
+
+  const selectedServicePoint = order.shipping?.selectedServicePoint;
+  const servicePointBlock = selectedServicePoint
+    ? `<br>Point relais : <strong>${escapeHtml(selectedServicePoint.name || "")}</strong>${formatServicePointLine(selectedServicePoint)}`
+    : "";
+  const helperLine = audience === "seller" && order.shipping?.shipment?.parcelId
+    ? `<br>Colis Sendcloud : <strong>#${escapeHtml(order.shipping.shipment.parcelId)}</strong>`
+    : "";
+
+  return `
+    <p>
+      Livraison : <strong>${escapeHtml(order.shipping.selectedOption.label)}</strong><br>
+      Frais : <strong>${escapeHtml(formatPrice(order.shipping.shippingAmount || 0))}</strong>
+      ${servicePointBlock}
+      ${helperLine}
+    </p>
+  `;
+}
+
+function buildTrackingLink(order) {
+  return cleanLink(
+    order.shipping?.shipment?.trackingUrl
+    || order.shipping?.shipment?.sendcloudTrackingUrl
+  );
+}
+
+function buildShippingLabelLink(order) {
+  if (!order.shipping?.shipment) return "";
+  const orderNumber = encodeURIComponent(order.orderNumber || "");
+  return `${config.appBaseUrl}/api/orders/${orderNumber}/shipping-label`;
+}
+
+function formatServicePointLine(servicePoint) {
+  const line = [
+    [clean(servicePoint.street), clean(servicePoint.houseNumber)].filter(Boolean).join(" ").trim(),
+    [clean(servicePoint.postalCode), clean(servicePoint.city)].filter(Boolean).join(" ").trim()
+  ].filter(Boolean).join(", ");
+
+  return line ? `<br>${escapeHtml(line)}` : "";
+}
+
+function cleanLink(value) {
+  const link = String(value || "").trim();
+  return /^https?:\/\//i.test(link) ? link : "";
+}
+
+function clean(value) {
+  return String(value || "").trim();
+}
+
+function normalizeStatusLabel(value) {
+  return clean(value).toLowerCase();
 }
 
 function buildLegalLinks() {

@@ -1728,6 +1728,7 @@ a {
 }
 
 .checkout-panel__head h2,
+.checkout-shipping h3,
 .checkout-summary h3,
 .checkout-methods h3,
 .checkout-success h3 {
@@ -1798,12 +1799,85 @@ a {
     resize: vertical;
 }
 
+.checkout-shipping,
 .checkout-methods,
 .checkout-summary,
 .checkout-success {
     padding: 20px;
     border: 1px solid rgba(200, 155, 79, 0.18);
     background: rgba(6, 19, 32, 0.62);
+}
+
+.checkout-shipping {
+    display: grid;
+    gap: 14px;
+}
+
+.checkout-shipping__note,
+.checkout-shipping__feedback,
+.checkout-shipping__empty {
+    margin: 0;
+    color: var(--muted);
+    font-family: "Cormorant Garamond", Georgia, serif;
+    font-size: 15px;
+    line-height: 1.4;
+}
+
+.checkout-shipping__note:empty,
+.checkout-shipping__feedback:empty {
+    display: none;
+}
+
+.checkout-shipping__options {
+    display: grid;
+    gap: 10px;
+}
+
+.checkout-shipping-option {
+    display: block;
+    cursor: pointer;
+}
+
+.checkout-shipping-option input {
+    position: absolute;
+    opacity: 0;
+}
+
+.checkout-shipping-option__content {
+    display: grid;
+    gap: 6px;
+    padding: 14px 16px;
+    border: 1px solid rgba(200, 155, 79, 0.18);
+    background: rgba(8, 17, 26, 0.46);
+    transition: border-color 180ms ease, background-color 180ms ease, box-shadow 180ms ease;
+}
+
+.checkout-shipping-option__top {
+    display: flex;
+    align-items: start;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.checkout-shipping-option__content strong {
+    color: var(--gold-soft);
+    font-family: "Cinzel", Georgia, serif;
+    font-size: 15px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.checkout-shipping-option__content small {
+    color: var(--muted);
+    font-family: "Cormorant Garamond", Georgia, serif;
+    font-size: 15px;
+    line-height: 1.4;
+}
+
+.checkout-shipping-option input:checked + .checkout-shipping-option__content {
+    border-color: var(--gold);
+    background: rgba(200, 155, 79, 0.08);
+    box-shadow: 0 12px 24px rgba(11, 18, 27, 0.08);
 }
 
 .checkout-methods {
@@ -2356,6 +2430,7 @@ a {
     }
 
     .checkout-form__grid,
+    .checkout-shipping__options,
     .checkout-methods__list,
     .checkout-success__meta {
         grid-template-columns: 1fr;
@@ -2404,6 +2479,10 @@ a {
     .checkout-stripe__lead,
     .checkout-stripe__note {
         font-size: 16px;
+    }
+
+    .checkout-shipping-option__top {
+        flex-direction: column;
     }
 }
 
