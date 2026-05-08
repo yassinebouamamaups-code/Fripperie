@@ -1798,6 +1798,39 @@ a {
     resize: vertical;
 }
 
+.checkout-promo {
+    display: grid;
+    gap: 10px;
+    margin-bottom: 8px;
+}
+
+.checkout-promo__label {
+    display: grid;
+    gap: 8px;
+}
+
+.checkout-promo__controls {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 10px;
+}
+
+.checkout-promo__button {
+    border: 1px solid rgba(200, 155, 79, 0.28);
+    background: rgba(200, 155, 79, 0.14);
+    color: var(--text);
+    font: inherit;
+    padding: 12px 16px;
+    cursor: pointer;
+}
+
+.checkout-promo__feedback {
+    margin: 0;
+    min-height: 1.25em;
+    color: rgba(246, 239, 228, 0.78);
+    font-size: 14px;
+}
+
 .checkout-methods,
 .checkout-summary,
 .checkout-success {
@@ -2497,6 +2530,10 @@ a {
     .checkout-form__grid,
     .checkout-methods__list,
     .checkout-success__meta {
+        grid-template-columns: 1fr;
+    }
+
+    .checkout-promo__controls {
         grid-template-columns: 1fr;
     }
 

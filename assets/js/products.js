@@ -42,6 +42,12 @@
         error: ""
     };
     let checkoutShippingUpdateTimer = 0;
+    let checkoutPromotionState = {
+        code: "",
+        promotion: null,
+        loading: false,
+        error: ""
+    };
 
     function resolveCheckoutConfig(customConfig) {
         const seller = customConfig.seller || {};
@@ -101,6 +107,41 @@
 
     function clean(value) {
         return String(value || "").trim();
+    }
+
+    async function hydrateTopbarPromotion() {
+        const topbarTrack = document.querySelector(".topbar__track");
+        if (!topbarTrack || !shopConfig.backend.baseUrl) {
+            return;
+        }
+
+        try {
+            const response = await fetch(`${shopConfig.backend.baseUrl}/api/promotions/active`);
+            const payload = await response.json().catch(() => ({}));
+            if (!response.ok || !payload?.promotion?.message) {
+                return;
+            }
+
+            injectTopbarPromotion(topbarTrack, payload.promotion.message);
+        } catch {
+            // Silently keep the static topbar when the promo source is unavailable.
+        }
+    }
+
+    function injectTopbarPromotion(track, message) {
+        track.querySelectorAll("[data-topbar-promo]").forEach((node) => node.remove());
+        const promoMarkup = topbarPromotionMarkup(message);
+        track.insertAdjacentHTML("beforeend", promoMarkup);
+        track.insertAdjacentHTML("beforeend", promoMarkup.replace(' data-topbar-promo="true"', ' data-topbar-promo="true" aria-hidden="true"'));
+    }
+
+    function topbarPromotionMarkup(message) {
+        return `
+            <div class="topbar__item" data-topbar-promo="true">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l2.1 5.4L20 9l-4.5 3.8L16.8 19 12 15.7 7.2 19l1.3-6.2L4 9l5.9-.6L12 3Z"/></svg>
+                ${escapeHtml(message)}
+            </div>
+        `;
     }
 
     function normalizeCategory(value) {
@@ -313,6 +354,7 @@
         clearPendingPayPalOrder();
         clearPendingStripeSession();
         resetStripeCheckoutState();
+        resetCheckoutPromotionState();
 
         if (!checkoutElements) {
             return;
@@ -721,9 +763,23 @@
                     <div class="checkout-summary">
                         <h3>R&eacute;capitulatif</h3>
                         <div class="checkout-summary__items" data-checkout-items></div>
+                        <div class="checkout-promo">
+                            <label class="checkout-promo__label">
+                                <span>Code promo</span>
+                                <div class="checkout-promo__controls">
+                                    <input type="text" name="promoCode" placeholder="Entrez votre code promo">
+                                    <button type="button" class="checkout-promo__button" data-apply-promo>Appliquer</button>
+                                </div>
+                            </label>
+                            <p class="checkout-promo__feedback" data-promo-feedback></p>
+                        </div>
                         <div class="checkout-summary__line">
                             <span>Sous-total</span>
                             <strong data-checkout-subtotal>0,00 EUR</strong>
+                        </div>
+                        <div class="checkout-summary__line" data-checkout-promo-line hidden>
+                            <span>Code promo</span>
+                            <strong data-checkout-promo-total>-0,00 EUR</strong>
                         </div>
                         <div class="checkout-summary__line">
                             <span>Livraison</span>
@@ -769,7 +825,12 @@
             stripeMount: panel.querySelector("[data-stripe-payment-element]"),
             stripeNote: panel.querySelector("[data-stripe-payment-note]"),
             items: panel.querySelector("[data-checkout-items]"),
+            promoInput: panel.querySelector("input[name='promoCode']"),
+            promoApplyButton: panel.querySelector("[data-apply-promo]"),
+            promoFeedback: panel.querySelector("[data-promo-feedback]"),
             subtotal: panel.querySelector("[data-checkout-subtotal]"),
+            promoLine: panel.querySelector("[data-checkout-promo-line]"),
+            promoTotal: panel.querySelector("[data-checkout-promo-total]"),
             shippingTotal: panel.querySelector("[data-checkout-shipping-total]"),
             total: panel.querySelector("[data-checkout-total]"),
             feedback: panel.querySelector("[data-checkout-feedback]"),
@@ -830,6 +891,20 @@
             error: ""
         };
         renderShippingOptions();
+    }
+
+    function resetCheckoutPromotionState() {
+        checkoutPromotionState = {
+            code: "",
+            promotion: null,
+            loading: false,
+            error: ""
+        };
+
+        if (checkoutElements?.promoInput) {
+            checkoutElements.promoInput.value = "";
+        }
+        renderPromotionFeedback();
     }
 
     function scheduleCheckoutShippingRefresh() {
@@ -1058,6 +1133,21 @@
             return;
         }
 
+        if (event.target instanceof HTMLInputElement && event.target.name === "promoCode") {
+            const nextCode = clean(event.target.value).toUpperCase();
+            checkoutPromotionState.code = nextCode;
+            if (!nextCode) {
+                checkoutPromotionState.promotion = null;
+                checkoutPromotionState.error = "";
+            } else if (checkoutPromotionState.promotion?.code !== nextCode) {
+                checkoutPromotionState.promotion = null;
+                checkoutPromotionState.error = "";
+            }
+            renderPromotionFeedback();
+            renderCheckoutSummary(loadCart());
+            return;
+        }
+
         const shouldRefreshShipping = isCheckoutShippingRelevantField(event.target);
         if (
             (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement)
@@ -1073,26 +1163,31 @@
 
     function handleCheckoutFormClick(event) {
         const trigger = event.target.closest("[data-open-service-point-picker]");
-        if (!trigger) {
+        if (trigger) {
+            event.preventDefault();
+            const optionId = clean(trigger.dataset.shippingOptionId);
+            if (!optionId) {
+                return;
+            }
+
+            const optionInput = checkoutElements?.form?.querySelector(`input[name='shippingOption'][value="${CSS.escape(optionId)}"]`);
+            if (optionInput instanceof HTMLInputElement) {
+                optionInput.checked = true;
+                checkoutShippingState.selectedOptionId = optionId;
+            }
+
+            checkoutElements.feedback.textContent = "";
+            renderCheckoutSummary(loadCart());
+            syncCheckoutPaymentUi();
+            void openSelectedServicePointPicker(optionId);
             return;
         }
 
-        event.preventDefault();
-        const optionId = clean(trigger.dataset.shippingOptionId);
-        if (!optionId) {
-            return;
+        const promoTrigger = event.target.closest("[data-apply-promo]");
+        if (promoTrigger) {
+            event.preventDefault();
+            void applyPromotionCode();
         }
-
-        const optionInput = checkoutElements?.form?.querySelector(`input[name='shippingOption'][value="${CSS.escape(optionId)}"]`);
-        if (optionInput instanceof HTMLInputElement) {
-            optionInput.checked = true;
-            checkoutShippingState.selectedOptionId = optionId;
-        }
-
-        checkoutElements.feedback.textContent = "";
-        renderCheckoutSummary(loadCart());
-        syncCheckoutPaymentUi();
-        void openSelectedServicePointPicker(optionId);
     }
 
     function getSelectedPaymentMethodId() {
@@ -1101,6 +1196,67 @@
 
     function getSelectedPaymentMethod() {
         return getAvailablePaymentMethods().find((method) => method.id === getSelectedPaymentMethodId()) || null;
+    }
+
+    async function applyPromotionCode() {
+        if (!checkoutElements?.promoInput || !shopConfig.backend.baseUrl) {
+            return;
+        }
+
+        const items = loadCart();
+        const promoCode = clean(checkoutElements.promoInput.value).toUpperCase();
+        checkoutPromotionState.code = promoCode;
+
+        if (!promoCode) {
+            checkoutPromotionState.promotion = null;
+            checkoutPromotionState.error = "";
+            renderPromotionFeedback();
+            renderCheckoutSummary(items);
+            return;
+        }
+
+        checkoutPromotionState.loading = true;
+        checkoutPromotionState.error = "";
+        renderPromotionFeedback();
+
+        try {
+            const response = await fetch(`${shopConfig.backend.baseUrl}/api/promotions/validate`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    promoCode,
+                    cart: items.map((item) => ({
+                        id: item.id,
+                        quantity: 1,
+                        price: item.price,
+                        unitAmount: parsePrice(item.price)
+                    }))
+                })
+            });
+
+            const payload = await response.json().catch(() => ({}));
+            if (!response.ok || !payload?.promotion) {
+                throw new Error(payload?.error?.message || "Code promo erroné.");
+            }
+
+            checkoutPromotionState.promotion = payload.promotion;
+            checkoutPromotionState.code = clean(payload.promotion.code).toUpperCase();
+            checkoutPromotionState.error = "";
+            currentOrder = null;
+            clearPendingPayPalOrder();
+            clearPendingStripeSession();
+            resetStripeCheckoutState();
+        } catch (error) {
+            checkoutPromotionState.promotion = null;
+            checkoutPromotionState.error = error.message || "Code promo erroné.";
+        } finally {
+            checkoutPromotionState.loading = false;
+            renderPromotionFeedback();
+            renderCheckoutSummary(items);
+            syncCheckoutPaymentUi();
+        }
     }
 
     function syncCheckoutPaymentUi() {
@@ -1235,6 +1391,7 @@
                 id: clean(item.id),
                 price: parsePrice(item.price)
             })),
+            promoCode: clean(checkoutElements?.promoInput?.value).toUpperCase(),
             customer: {
                 firstName: clean(customer.firstName),
                 lastName: clean(customer.lastName),
@@ -1798,9 +1955,10 @@
 
     function renderCheckoutSummary(items) {
         const subtotal = items.reduce((sum, item) => sum + parsePrice(item.price), 0);
+        const promotionDiscount = Number(checkoutPromotionState.promotion?.discountAmount || 0);
         const shippingOption = getSelectedShippingOption();
         const shippingAmount = shippingOption ? Number(shippingOption.shippingAmount || 0) : 0;
-        const total = subtotal + shippingAmount;
+        const total = Math.max(subtotal - promotionDiscount, 0) + shippingAmount;
         checkoutElements.items.innerHTML = items.map((item) => `
             <article class="checkout-summary__item">
                 <div>
@@ -1814,12 +1972,49 @@
         if (checkoutElements.subtotal) {
             checkoutElements.subtotal.textContent = formatPrice(subtotal);
         }
+        if (checkoutElements.promoLine && checkoutElements.promoTotal) {
+            const label = checkoutElements.promoLine.querySelector("span");
+            const hasPromotion = promotionDiscount > 0;
+            checkoutElements.promoLine.hidden = !hasPromotion;
+            if (hasPromotion) {
+                if (label) {
+                    label.textContent = checkoutPromotionState.promotion?.code
+                        ? `Code promo (${checkoutPromotionState.promotion.code})`
+                        : "Code promo";
+                }
+                checkoutElements.promoTotal.textContent = `-${formatPrice(promotionDiscount)}`;
+            }
+        }
         if (checkoutElements.shippingTotal) {
             checkoutElements.shippingTotal.textContent = shippingOption
                 ? (shippingAmount <= 0 ? "Offerte" : formatPrice(shippingAmount))
                 : "A calculer";
         }
         checkoutElements.total.textContent = formatPrice(total);
+    }
+
+    function renderPromotionFeedback() {
+        if (!checkoutElements?.promoFeedback || !checkoutElements?.promoApplyButton) {
+            return;
+        }
+
+        checkoutElements.promoApplyButton.disabled = checkoutPromotionState.loading;
+        if (checkoutPromotionState.loading) {
+            checkoutElements.promoFeedback.textContent = "Validation du code promo...";
+            return;
+        }
+
+        if (checkoutPromotionState.error) {
+            checkoutElements.promoFeedback.textContent = checkoutPromotionState.error;
+            return;
+        }
+
+        if (checkoutPromotionState.promotion?.code) {
+            checkoutElements.promoFeedback.textContent = `${checkoutPromotionState.promotion.code} appliqué : -${checkoutPromotionState.promotion.percentOff}%`;
+            return;
+        }
+
+        checkoutElements.promoFeedback.textContent = "";
     }
 
     function getInvalidPricedItems(items) {
@@ -1841,6 +2036,7 @@
         currentOrder = null;
         resetStripeCheckoutState();
         resetCheckoutShippingState();
+        resetCheckoutPromotionState();
         checkoutElements.feedback.textContent = "";
         checkoutElements.success.hidden = true;
         checkoutElements.form.hidden = false;
@@ -1890,6 +2086,15 @@
             country: "FR",
             customerNote: clean(formData.get("customerNote"))
         };
+        const promoCode = clean(formData.get("promoCode")).toUpperCase();
+
+        if (promoCode && checkoutPromotionState.promotion?.code !== promoCode) {
+            await applyPromotionCode();
+            if (checkoutPromotionState.promotion?.code !== promoCode) {
+                checkoutElements.feedback.textContent = checkoutPromotionState.error || "Code promo erroné.";
+                return;
+            }
+        }
 
         if (!customer.firstName || !customer.lastName || !customer.email || !customer.phone || !customer.addressLine1 || !customer.postalCode || !customer.city) {
             checkoutElements.feedback.textContent = "Merci de compl\u00e9ter toutes les informations client.";
@@ -1918,7 +2123,7 @@
             submitButton.disabled = true;
 
             try {
-                const remoteOrder = await createPayPalBackendOrder(items, customer, selectedShippingOptionId, selectedServicePoint);
+                const remoteOrder = await createPayPalBackendOrder(items, customer, selectedShippingOptionId, selectedServicePoint, promoCode);
                 const pendingOrder = {
                     orderNumber: remoteOrder.orderNumber,
                     invoiceNumber: remoteOrder.invoiceNumber,
@@ -1949,7 +2154,7 @@
                 const stripeConfig = await ensureStripeClientConfig();
                 if (clean(stripeConfig?.checkoutMode).toLowerCase() === "redirect") {
                     checkoutElements.feedback.textContent = "Redirection vers la page securisee Stripe...";
-                    const remoteSession = await createStripeBackendSession(items, customer, selectedShippingOptionId, selectedServicePoint);
+                    const remoteSession = await createStripeBackendSession(items, customer, selectedShippingOptionId, selectedServicePoint, promoCode);
                     const pendingSession = {
                         orderNumber: remoteSession.orderNumber,
                         invoiceNumber: remoteSession.invoiceNumber,
@@ -1971,7 +2176,7 @@
                         : "Pr\u00e9paration du paiement Stripe...";
                     syncCheckoutPaymentUi();
 
-                    const remoteSession = await createStripeBackendSession(items, customer, selectedShippingOptionId, selectedServicePoint);
+                    const remoteSession = await createStripeBackendSession(items, customer, selectedShippingOptionId, selectedServicePoint, promoCode);
                     const pendingSession = {
                         orderNumber: remoteSession.orderNumber,
                         invoiceNumber: remoteSession.invoiceNumber,
@@ -2050,7 +2255,7 @@
         closeCart();
     }
 
-    async function createPayPalBackendOrder(items, customer, shippingOptionId, servicePoint) {
+    async function createPayPalBackendOrder(items, customer, shippingOptionId, servicePoint, promoCode = "") {
         const response = await fetch(`${shopConfig.backend.baseUrl}/api/checkout/paypal/order`, {
             method: "POST",
             headers: {
@@ -2068,6 +2273,7 @@
                     unitAmount: parsePrice(item.price)
                 })),
                 customer,
+                promoCode,
                 shipping: {
                     optionId: shippingOptionId,
                     servicePoint
@@ -2083,7 +2289,7 @@
         return payload;
     }
 
-    async function createStripeBackendSession(items, customer, shippingOptionId, servicePoint) {
+    async function createStripeBackendSession(items, customer, shippingOptionId, servicePoint, promoCode = "") {
         const response = await fetch(`${shopConfig.backend.baseUrl}/api/checkout/stripe/session`, {
             method: "POST",
             headers: {
@@ -2101,6 +2307,7 @@
                     unitAmount: parsePrice(item.price)
                 })),
                 customer,
+                promoCode,
                 shipping: {
                     optionId: shippingOptionId,
                     servicePoint
@@ -2659,6 +2866,7 @@
     setupCheckout();
     enableImageFallbacks();
     handlePaymentReturn();
+    void hydrateTopbarPromotion();
 
     if (!hasProductUi) {
         return;
