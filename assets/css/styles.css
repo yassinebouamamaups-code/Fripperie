@@ -1053,6 +1053,45 @@ a {
     line-height: 1.45;
 }
 
+.product-detail__support {
+    width: min(100%, 560px);
+    margin: 0 0 24px;
+    padding: 18px 20px;
+    border: 1px solid rgba(200, 155, 79, 0.22);
+    background:
+        linear-gradient(135deg, rgba(200, 155, 79, 0.08), rgba(5, 18, 29, 0.92)),
+        rgba(5, 18, 29, 0.92);
+    box-shadow: 0 18px 32px rgba(0, 0, 0, 0.18);
+}
+
+.product-detail__support-eyebrow {
+    margin: 0 0 8px;
+    color: var(--text);
+    font-family: "Cinzel", Georgia, serif;
+    font-size: 14px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+.product-detail__support-text {
+    margin: 0;
+    color: var(--muted);
+    font-family: "Montserrat", Arial, sans-serif;
+    font-size: 14px;
+    line-height: 1.7;
+}
+
+.product-detail__support-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 16px;
+}
+
+.product-detail__support-button {
+    background: transparent;
+}
+
 .product-detail__price {
     margin: 0 0 24px;
     color: var(--gold-soft);

@@ -11,7 +11,12 @@ window.SHOP_CHECKOUT_CONFIG = {
         postalCode: "31600",
         country: "France",
         vatNumber: "",
-        siret: ""
+        siret: "",
+        support: {
+            whatsappUrl: "https://wa.me/33608917053",
+            sourcingInstagramUrl: "https://www.instagram.com/lagouttedemershop/",
+            sourcingInstagramLabel: "@lagouttedemershop"
+        }
     },
     paymentMethods: {
         stripe: {

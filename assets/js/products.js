@@ -55,6 +55,7 @@
         const paymentMethods = customConfig.paymentMethods || {};
         const documents = customConfig.documents || {};
         const emailDelivery = customConfig.emailDelivery || {};
+        const sellerSupport = seller.support || {};
 
         return {
             backend: {
@@ -69,7 +70,12 @@
                 postalCode: seller.postalCode || "31600",
                 country: seller.country || "France",
                 vatNumber: seller.vatNumber || "",
-                siret: seller.siret || ""
+                siret: seller.siret || "",
+                support: {
+                    whatsappUrl: clean(sellerSupport.whatsappUrl) || "https://wa.me/33608917053",
+                    sourcingInstagramUrl: clean(sellerSupport.sourcingInstagramUrl) || "",
+                    sourcingInstagramLabel: clean(sellerSupport.sourcingInstagramLabel) || "@lagouttedemershop"
+                }
             },
             documents: {
                 invoicePrefix: documents.invoicePrefix || "FAC"
@@ -118,41 +124,6 @@
         return entries
             .map((entry) => clean(entry))
             .filter(Boolean);
-    }
-
-    async function hydrateTopbarPromotion() {
-        const topbarTrack = document.querySelector(".topbar__track");
-        if (!topbarTrack || !shopConfig.backend.baseUrl) {
-            return;
-        }
-
-        try {
-            const response = await fetch(`${shopConfig.backend.baseUrl}/api/promotions/active`);
-            const payload = await response.json().catch(() => ({}));
-            if (!response.ok || !payload?.promotion?.message) {
-                return;
-            }
-
-            injectTopbarPromotion(topbarTrack, payload.promotion.message);
-        } catch {
-            // Silently keep the static topbar when the promo source is unavailable.
-        }
-    }
-
-    function injectTopbarPromotion(track, message) {
-        track.querySelectorAll("[data-topbar-promo]").forEach((node) => node.remove());
-        const promoMarkup = topbarPromotionMarkup(message);
-        track.insertAdjacentHTML("beforeend", promoMarkup);
-        track.insertAdjacentHTML("beforeend", promoMarkup.replace(' data-topbar-promo="true"', ' data-topbar-promo="true" aria-hidden="true"'));
-    }
-
-    function topbarPromotionMarkup(message) {
-        return `
-            <div class="topbar__item" data-topbar-promo="true">
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l2.1 5.4L20 9l-4.5 3.8L16.8 19 12 15.7 7.2 19l1.3-6.2L4 9l5.9-.6L12 3Z"/></svg>
-                ${escapeHtml(message)}
-            </div>
-        `;
     }
 
     function normalizeCategory(value) {
@@ -510,6 +481,7 @@
                     <h1>${product.nom}</h1>
                     ${sizeMarkup(product, "product-detail__size")}
                     <p class="product-detail__description">${product.description || ""}</p>
+                    ${productSupportMarkup()}
                     ${priceMarkup(product, "product-detail__price")}
                     <div class="product-detail__actions">
                         ${cartButtonMarkup(product, "product-detail__cart")}
@@ -517,6 +489,36 @@
                     </div>
                 </div>
             </article>
+        `;
+    }
+
+    function productSupportMarkup() {
+        const support = shopConfig.seller.support || {};
+        const whatsappUrl = clean(support.whatsappUrl);
+        const sourcingInstagramUrl = clean(support.sourcingInstagramUrl);
+        const sourcingInstagramLabel = clean(support.sourcingInstagramLabel) || "@lagouttedemershop";
+
+        const actions = [
+            whatsappUrl
+                ? `<a href="${escapeAttribute(whatsappUrl)}" class="button button--small" target="_blank" rel="noopener">Contacter sur WhatsApp</a>`
+                : "",
+            sourcingInstagramUrl
+                ? `<a href="${escapeAttribute(sourcingInstagramUrl)}" class="button button--small product-detail__support-button" target="_blank" rel="noopener">Instagram sourcing ${escapeHtml(sourcingInstagramLabel)}</a>`
+                : ""
+        ].filter(Boolean).join("");
+
+        if (!actions) {
+            return "";
+        }
+
+        return `
+            <aside class="product-detail__support" aria-label="Aide au choix">
+                <p class="product-detail__support-eyebrow">Besoin d'aide pour choisir ?</p>
+                <p class="product-detail__support-text">Une question sur les mesures, la coupe ou l'etat d'un article ? Ecris-moi sur WhatsApp. Et si tu recherches une piece en particulier, contacte-moi aussi via Instagram pour le sourcing mode.</p>
+                <div class="product-detail__support-actions">
+                    ${actions}
+                </div>
+            </aside>
         `;
     }
 
@@ -2933,8 +2935,6 @@
     setupCheckout();
     enableImageFallbacks();
     handlePaymentReturn();
-    void hydrateTopbarPromotion();
-
     if (!hasProductUi) {
         return;
     }
