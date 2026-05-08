@@ -301,10 +301,43 @@
 
     function saveCart(items) {
         localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(items));
+        invalidatePendingCheckoutState();
     }
 
     function saveLastOrder(order) {
         localStorage.setItem(LAST_ORDER_STORAGE_KEY, JSON.stringify(order));
+    }
+
+    function invalidatePendingCheckoutState() {
+        currentOrder = null;
+        clearPendingPayPalOrder();
+        clearPendingStripeSession();
+        resetStripeCheckoutState();
+
+        if (!checkoutElements) {
+            return;
+        }
+
+        checkoutElements.feedback.textContent = "";
+        checkoutElements.success.hidden = true;
+        checkoutElements.form.hidden = false;
+        checkoutElements.payNow.href = "#";
+        checkoutElements.payNow.setAttribute("aria-disabled", "true");
+
+        if (!document.body.classList.contains("checkout-is-open")) {
+            return;
+        }
+
+        const items = loadCart();
+        if (!items.length) {
+            closeCheckout();
+            closeCart();
+            return;
+        }
+
+        renderCheckoutSummary(items);
+        updateCheckoutShippingOptions();
+        syncCheckoutPaymentUi();
     }
 
     function priceMarkup(product, className) {
