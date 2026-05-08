@@ -2636,19 +2636,29 @@ a {
     }
 
     .payment-method__content {
-        min-height: 72px;
-        padding: 10px 40px 10px 12px;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        align-items: start;
+        justify-content: stretch;
+        gap: 14px;
+        min-height: auto;
+        padding: 14px 40px 14px 14px;
     }
 
     .payment-method__content::after {
+        top: 18px;
         right: 14px;
         width: 9px;
         height: 9px;
+        transform: none;
     }
 
     .payment-method__brand {
+        order: 2;
+        min-width: 0;
         min-height: 42px;
-        padding: 8px 10px;
+        justify-content: flex-start;
+        padding: 8px 12px;
     }
 
     .payment-method__logo {
@@ -2656,8 +2666,41 @@ a {
         height: 28px;
     }
 
+    .payment-method__meta {
+        order: 1;
+        width: 100%;
+        padding-right: 0;
+    }
+
+    .payment-method__title {
+        font-size: 14px !important;
+    }
+
+    .payment-method__content small,
+    .payment-method__content em {
+        margin-top: 4px;
+        font-size: 14px;
+        line-height: 1.45;
+    }
+
     .payment-method__content em {
         grid-column: 1;
+    }
+
+    .payment-method__badges {
+        flex-wrap: nowrap;
+        gap: 6px;
+        overflow-x: auto;
+        padding-bottom: 2px;
+        scrollbar-width: none;
+    }
+
+    .payment-method__badges::-webkit-scrollbar {
+        display: none;
+    }
+
+    .payment-method__badge--brand {
+        flex: 0 0 auto;
     }
 
     .checkout-stripe {
