@@ -881,9 +881,49 @@
 
         return `
             <span class="payment-method__badges">
-                ${badges.map((badge) => `<span class="payment-method__badge">${escapeHtml(badge)}</span>`).join("")}
+                ${badges.map((badge) => paymentBadgeVisualMarkup(badge)).join("")}
             </span>
         `;
+    }
+
+    function paymentBadgeVisualMarkup(badge) {
+        const key = clean(badge).toLowerCase();
+
+        if (key === "visa") {
+            return `
+                <span class="payment-method__badge payment-method__badge--brand payment-method__badge--visa" aria-label="Visa">
+                    <span>VISA</span>
+                </span>
+            `;
+        }
+
+        if (key === "mastercard") {
+            return `
+                <span class="payment-method__badge payment-method__badge--brand payment-method__badge--mastercard" aria-label="Mastercard">
+                    <span class="payment-method__mc">
+                        <i></i><i></i>
+                    </span>
+                </span>
+            `;
+        }
+
+        if (key === "klarna") {
+            return `
+                <span class="payment-method__badge payment-method__badge--brand payment-method__badge--klarna" aria-label="Klarna">
+                    <span>Klarna</span>
+                </span>
+            `;
+        }
+
+        if (key === "cb") {
+            return `
+                <span class="payment-method__badge payment-method__badge--brand payment-method__badge--cb" aria-label="Carte Bancaire">
+                    <span>CB</span>
+                </span>
+            `;
+        }
+
+        return `<span class="payment-method__badge">${escapeHtml(badge)}</span>`;
     }
 
     function renderPaymentMethods() {
