@@ -28,6 +28,7 @@
     let stripeMountingSignature = "";
     let stripeAutofillCheckTimer = 0;
     let checkoutShippingRequestId = 0;
+    let stripeCheckoutMode = "custom";
     let sendcloudServicePointSdkPromise = null;
     let checkoutShippingState = {
         options: [],
@@ -1078,7 +1079,7 @@
         const customerReady = hasValidCheckoutCustomerDetails();
         const shippingReady = isShippingSelectionComplete();
         const stripeRefreshing = isStripe && Boolean(stripeMountingSignature);
-        const shouldShowStripePanel = customerReady && isStripe;
+        const shouldShowStripePanel = customerReady && isStripe && stripeCheckoutMode !== "redirect";
         checkoutElements.paymentMethods.querySelectorAll(".payment-method").forEach((card) => {
             const input = card.querySelector("input[name='paymentMethod']");
             card.classList.toggle("payment-method--active", Boolean(input?.checked));
@@ -1105,6 +1106,13 @@
 
         if (!isStripe) {
             setCheckoutSubmitLabel("Valider et payer");
+            checkoutElements.submitButton.disabled = !shippingReady;
+            checkoutElements.stripeNote.textContent = "";
+            return;
+        }
+
+        if (stripeCheckoutMode === "redirect") {
+            setCheckoutSubmitLabel("Payer avec Stripe");
             checkoutElements.submitButton.disabled = !shippingReady;
             checkoutElements.stripeNote.textContent = "";
             return;
@@ -1384,6 +1392,7 @@
 
     async function ensureStripeClientConfig() {
         if (stripeClientConfig?.publishableKey) {
+            stripeCheckoutMode = clean(stripeClientConfig?.checkoutMode).toLowerCase() === "redirect" ? "redirect" : "custom";
             return stripeClientConfig;
         }
 
@@ -1394,6 +1403,7 @@
         }
 
         stripeClientConfig = payload;
+        stripeCheckoutMode = clean(payload?.checkoutMode).toLowerCase() === "redirect" ? "redirect" : "custom";
         return stripeClientConfig;
     }
 
@@ -1624,6 +1634,15 @@
 
     async function maybeAutoInitializeStripe() {
         if (!checkoutElements || getSelectedPaymentMethodId() !== "stripe") {
+            return;
+        }
+
+        const stripeConfig = await ensureStripeClientConfig().catch(() => null);
+        if (clean(stripeConfig?.checkoutMode).toLowerCase() === "redirect") {
+            stripeMountingSignature = "";
+            checkoutElements.stripeMount.innerHTML = "";
+            checkoutElements.stripeNote.textContent = "";
+            syncCheckoutPaymentUi();
             return;
         }
 
@@ -1894,6 +1913,24 @@
             submitButton.disabled = true;
 
             try {
+                const stripeConfig = await ensureStripeClientConfig();
+                if (clean(stripeConfig?.checkoutMode).toLowerCase() === "redirect") {
+                    checkoutElements.feedback.textContent = "Redirection vers la page securisee Stripe...";
+                    const remoteSession = await createStripeBackendSession(items, customer, selectedShippingOptionId, selectedServicePoint);
+                    const pendingSession = {
+                        orderNumber: remoteSession.orderNumber,
+                        invoiceNumber: remoteSession.invoiceNumber,
+                        stripeSessionId: remoteSession.stripeSessionId,
+                        customer
+                    };
+
+                    currentOrder = pendingSession;
+                    saveLastOrder(pendingSession);
+                    savePendingStripeSession(pendingSession);
+                    window.location.href = remoteSession.checkoutUrl;
+                    return;
+                }
+
                 if (!stripeCheckoutState || stripeCheckoutState.signature !== signature) {
                     stripeMountingSignature = signature;
                     checkoutElements.feedback.textContent = stripeCheckoutState
@@ -2039,7 +2076,12 @@
         });
 
         const payload = await response.json().catch(() => ({}));
-        if (!response.ok || !payload.clientSecret || !payload.stripeSessionId) {
+        const isRedirectMode = clean(payload?.checkoutMode).toLowerCase() === "redirect";
+        const hasExpectedSessionData = isRedirectMode
+            ? Boolean(payload.checkoutUrl && payload.stripeSessionId)
+            : Boolean(payload.clientSecret && payload.stripeSessionId);
+
+        if (!response.ok || !hasExpectedSessionData) {
             const details = payload?.error?.details;
             const stripeMessage = typeof details?.error?.message === "string" ? details.error.message : "";
             throw new Error(stripeMessage || payload?.error?.message || "Impossible de lancer Stripe.");
