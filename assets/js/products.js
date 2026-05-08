@@ -891,34 +891,32 @@
 
         if (key === "visa") {
             return `
-                <span class="payment-method__badge payment-method__badge--brand payment-method__badge--visa" aria-label="Visa">
-                    <span>VISA</span>
+                <span class="payment-method__badge payment-method__badge--brand" aria-label="Visa">
+                    <img class="payment-method__badge-logo" src="assets/images/payment-visa.svg" alt="Visa">
                 </span>
             `;
         }
 
         if (key === "mastercard") {
             return `
-                <span class="payment-method__badge payment-method__badge--brand payment-method__badge--mastercard" aria-label="Mastercard">
-                    <span class="payment-method__mc">
-                        <i></i><i></i>
-                    </span>
+                <span class="payment-method__badge payment-method__badge--brand" aria-label="Mastercard">
+                    <img class="payment-method__badge-logo" src="assets/images/payment-mastercard.svg" alt="Mastercard">
                 </span>
             `;
         }
 
         if (key === "klarna") {
             return `
-                <span class="payment-method__badge payment-method__badge--brand payment-method__badge--klarna" aria-label="Klarna">
-                    <span>Klarna</span>
+                <span class="payment-method__badge payment-method__badge--brand" aria-label="Klarna">
+                    <img class="payment-method__badge-logo" src="assets/images/payment-klarna.svg" alt="Klarna">
                 </span>
             `;
         }
 
         if (key === "cb") {
             return `
-                <span class="payment-method__badge payment-method__badge--brand payment-method__badge--cb" aria-label="Carte Bancaire">
-                    <span>CB</span>
+                <span class="payment-method__badge payment-method__badge--brand" aria-label="Carte Bancaire">
+                    <img class="payment-method__badge-logo" src="assets/images/payment-cb.svg" alt="CB">
                 </span>
             `;
         }
