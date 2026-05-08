@@ -508,7 +508,7 @@
                 ? `<a href="${escapeAttribute(sourcingInstagramUrl)}" class="button button--small product-detail__support-button" target="_blank" rel="noopener">Voir la page Instagram ${escapeHtml(sourcingInstagramLabel)}</a>`
                 : "",
             affordableInstagramUrl
-                ? `<a href="${escapeAttribute(affordableInstagramUrl)}" class="button button--small product-detail__support-button" target="_blank" rel="noopener">Voir les pieces de ${escapeHtml(affordableInstagramLabel)}</a>`
+                ? `<a href="${escapeAttribute(affordableInstagramUrl)}" class="button button--small product-detail__support-button" target="_blank" rel="noopener">Voir Instagram ${escapeHtml(affordableInstagramLabel)}</a>`
                 : ""
         ].filter(Boolean).join("");
 
