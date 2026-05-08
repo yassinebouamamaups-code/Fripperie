@@ -81,7 +81,9 @@
                     label: paymentMethods.stripe?.label || "Stripe",
                     description: paymentMethods.stripe?.description || "",
                     checkoutUrl: clean(paymentMethods.stripe?.checkoutUrl),
-                    logo: "assets/images/stripe-badge.svg"
+                    logo: "assets/images/stripe-badge.svg",
+                    secureLabel: paymentMethods.stripe?.secureLabel || "Paiement sécurisé via Stripe",
+                    supportedMethods: normalizePaymentBadges(paymentMethods.stripe?.supportedMethods, ["CB", "Visa", "Mastercard", "Klarna"])
                 },
                 paypal: {
                     id: "paypal",
@@ -89,7 +91,9 @@
                     label: paymentMethods.paypal?.label || "PayPal",
                     description: paymentMethods.paypal?.description || "",
                     checkoutUrl: clean(paymentMethods.paypal?.checkoutUrl),
-                    logo: "assets/images/paypal-badge.svg"
+                    logo: "assets/images/paypal-badge.svg",
+                    secureLabel: paymentMethods.paypal?.secureLabel || "Paiement sécurisé via PayPal",
+                    supportedMethods: normalizePaymentBadges(paymentMethods.paypal?.supportedMethods, [])
                 }
             },
             emailDelivery: {
@@ -107,6 +111,13 @@
 
     function clean(value) {
         return String(value || "").trim();
+    }
+
+    function normalizePaymentBadges(value, fallback = []) {
+        const entries = Array.isArray(value) ? value : fallback;
+        return entries
+            .map((entry) => clean(entry))
+            .filter(Boolean);
     }
 
     async function hydrateTopbarPromotion() {
@@ -862,6 +873,19 @@
         return `<img class="payment-method__logo" src="${escapeAttribute(method.logo)}" alt="${escapeAttribute(method.label)}">`;
     }
 
+    function paymentBadgesMarkup(method) {
+        const badges = Array.isArray(method.supportedMethods) ? method.supportedMethods : [];
+        if (!badges.length) {
+            return "";
+        }
+
+        return `
+            <span class="payment-method__badges">
+                ${badges.map((badge) => `<span class="payment-method__badge">${escapeHtml(badge)}</span>`).join("")}
+            </span>
+        `;
+    }
+
     function renderPaymentMethods() {
         const methods = getAvailablePaymentMethods();
         checkoutElements.paymentMethods.innerHTML = methods.map((method, index) => `
@@ -870,6 +894,11 @@
                 <span class="payment-method__content">
                     <span class="payment-method__brand">
                         ${paymentLogoMarkup(method)}
+                    </span>
+                    <span class="payment-method__meta">
+                        <strong class="payment-method__title">${escapeHtml(method.label)}</strong>
+                        ${method.secureLabel ? `<small>${escapeHtml(method.secureLabel)}</small>` : ""}
+                        ${paymentBadgesMarkup(method)}
                     </span>
                 </span>
             </label>

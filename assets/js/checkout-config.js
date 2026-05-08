@@ -18,13 +18,16 @@ window.SHOP_CHECKOUT_CONFIG = {
             enabled: true,
             // label: "Stripe",
             // description: "Paiement par carte bancaire via Stripe.",
-            checkoutUrl: ""
+            checkoutUrl: "",
+            secureLabel: "Paiement sécurisé via Stripe",
+            supportedMethods: ["CB", "Visa", "Mastercard", "Klarna"]
         },
         paypal: {
             enabled: true,
             // label: "PayPal",
             // description: "Paiement securise via PayPal.",
-            checkoutUrl: ""
+            checkoutUrl: "",
+            secureLabel: "Paiement sécurisé via PayPal"
         }
     },
     emailDelivery: {
