@@ -15,7 +15,9 @@ window.SHOP_CHECKOUT_CONFIG = {
         support: {
             whatsappUrl: "https://wa.me/33608917053",
             sourcingInstagramUrl: "https://www.instagram.com/lagouttedemershop/",
-            sourcingInstagramLabel: "@lagouttedemershop"
+            sourcingInstagramLabel: "@lagouttedemershop",
+            affordableInstagramUrl: "https://www.instagram.com/maisongouttedemer/",
+            affordableInstagramLabel: "@maisongouttedemer"
         }
     },
     paymentMethods: {

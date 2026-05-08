@@ -1675,6 +1675,7 @@ a {
 .cart-panel__actions button {
     background: transparent;
     cursor: pointer;
+    transition: background 180ms ease, color 180ms ease, transform 180ms ease;
 }
 
 .cart-panel__actions--double {
@@ -1692,6 +1693,15 @@ a {
 .cart-panel__primary {
     background: var(--gold) !important;
     color: var(--ink) !important;
+}
+
+.cart-panel__actions button:hover,
+.cart-panel__actions a:hover,
+.cart-panel__actions button:focus-visible,
+.cart-panel__actions a:focus-visible {
+    background: var(--gold);
+    color: var(--ink);
+    transform: translateY(-1px);
 }
 
 .cart-panel__note {
@@ -2363,6 +2373,7 @@ a {
     text-decoration: none;
     text-transform: uppercase;
     cursor: pointer;
+    transition: background 180ms ease, color 180ms ease, transform 180ms ease;
 }
 
 .checkout-actions__secondary,
@@ -2391,6 +2402,24 @@ a {
 .checkout-success__actions a:hover {
     background: #f3cf84;
     color: var(--ink);
+}
+
+.checkout-actions__secondary:hover,
+.checkout-success__actions button:hover,
+.checkout-actions__secondary:focus-visible,
+.checkout-success__actions button:focus-visible {
+    background: var(--gold);
+    color: var(--ink);
+    transform: translateY(-1px);
+}
+
+.checkout-actions__primary:hover,
+.checkout-success__actions a:hover,
+.checkout-actions__primary:focus-visible,
+.checkout-success__actions a:focus-visible {
+    background: #f3cf84;
+    color: var(--ink);
+    transform: translateY(-1px);
 }
 
 .checkout-actions__primary {
