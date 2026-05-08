@@ -503,7 +503,7 @@
                 ? `<a href="${escapeAttribute(whatsappUrl)}" class="button button--small" target="_blank" rel="noopener">Contacter sur WhatsApp</a>`
                 : "",
             sourcingInstagramUrl
-                ? `<a href="${escapeAttribute(sourcingInstagramUrl)}" class="button button--small product-detail__support-button" target="_blank" rel="noopener">Instagram sourcing ${escapeHtml(sourcingInstagramLabel)}</a>`
+                ? `<a href="${escapeAttribute(sourcingInstagramUrl)}" class="button button--small product-detail__support-button" target="_blank" rel="noopener">Voir la page Instagram ${escapeHtml(sourcingInstagramLabel)}</a>`
                 : ""
         ].filter(Boolean).join("");
 
@@ -514,7 +514,7 @@
         return `
             <aside class="product-detail__support" aria-label="Aide au choix">
                 <p class="product-detail__support-eyebrow">Besoin d'aide pour choisir ?</p>
-                <p class="product-detail__support-text">Une question sur les mesures, la coupe ou l'etat d'un article ? Ecris-moi sur WhatsApp. Et si tu recherches une piece en particulier, contacte-moi aussi via Instagram pour le sourcing mode.</p>
+                <p class="product-detail__support-text">Une question sur les mesures, la coupe ou l'etat d'un article ? Ecris-moi sur WhatsApp ou retrouve-moi directement sur Instagram.</p>
                 <div class="product-detail__support-actions">
                     ${actions}
                 </div>
