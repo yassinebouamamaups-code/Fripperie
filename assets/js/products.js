@@ -482,11 +482,11 @@
                     ${sizeMarkup(product, "product-detail__size")}
                     <p class="product-detail__description">${product.description || ""}</p>
                     ${priceMarkup(product, "product-detail__price")}
-                    ${productSupportMarkup()}
                     <div class="product-detail__actions">
                         ${cartButtonMarkup(product, "product-detail__cart")}
                         <a href="${categoryPage(product)}" class="button button--small">Retour categorie</a>
                     </div>
+                    ${productSupportMarkup()}
                 </div>
             </article>
         `;
@@ -508,7 +508,7 @@
                 ? `<a href="${escapeAttribute(sourcingInstagramUrl)}" class="button button--small product-detail__support-button" target="_blank" rel="noopener">Voir la page Instagram ${escapeHtml(sourcingInstagramLabel)}</a>`
                 : "",
             affordableInstagramUrl
-                ? `<a href="${escapeAttribute(affordableInstagramUrl)}" class="button button--small product-detail__support-button" target="_blank" rel="noopener">Consulter ${escapeHtml(affordableInstagramLabel)}</a>`
+                ? `<a href="${escapeAttribute(affordableInstagramUrl)}" class="button button--small product-detail__support-button" target="_blank" rel="noopener">Voir les pieces de ${escapeHtml(affordableInstagramLabel)}</a>`
                 : ""
         ].filter(Boolean).join("");
 
@@ -519,7 +519,7 @@
         return `
             <aside class="product-detail__support" aria-label="Aide au choix">
                 <p class="product-detail__support-eyebrow">Besoin d'aide pour choisir ?</p>
-                <p class="product-detail__support-text">Une question sur les mesures, la coupe ou l'etat d'un article ? Ecris-moi sur WhatsApp, retrouve-moi directement sur Instagram, ou consulte la page Instagram ${escapeHtml(affordableInstagramLabel)} si tu cherches des articles ou des pieces precises a prix plus abordables.</p>
+                <p class="product-detail__support-text">Une question sur les mesures, la coupe ou l'etat d'un article ? Ecris-moi sur WhatsApp, retrouve-moi directement sur Instagram, et va jeter un oeil a ${escapeHtml(affordableInstagramLabel)} pour decouvrir d'autres belles pieces a shopper.</p>
                 <div class="product-detail__support-actions">
                     ${actions}
                 </div>
