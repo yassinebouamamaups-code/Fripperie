@@ -10,14 +10,13 @@
     const LAST_ORDER_STORAGE_KEY = "laGoutteDeMerLastOrder";
     const PAYPAL_PENDING_STORAGE_KEY = "laGoutteDeMerPendingPayPalOrder";
     const STRIPE_PENDING_STORAGE_KEY = "laGoutteDeMerPendingStripeSession";
+    const CATALOG_CACHE_STORAGE_KEY = "laGoutteDeMerCatalogCache";
+    const CATALOG_CACHE_DURATION_MS = 10 * 60 * 1000;
     const DEFAULT_IMAGE_FALLBACK = "";
     const status = document.querySelector("[data-products-status]");
     const sourceUrl = clean(window.RENDER_RUNTIME_CONFIG?.catalogSourceUrl)
         || clean(window.PRODUCTS_SOURCE_URL)
         || "https://docs.google.com/spreadsheets/d/1yZVWg-Ypzd2VtFE4tVf0XmVVvTqzgFu8TTq4KAyvsb0/export?format=csv&gid=1348794459";
-    const cacheSafeSourceUrl = sourceUrl.includes("docs.google.com")
-        ? `${sourceUrl}${sourceUrl.includes("?") ? "&" : "?"}_=${Date.now()}`
-        : sourceUrl;
 
     const shopConfig = resolveCheckoutConfig(window.SHOP_CHECKOUT_CONFIG || {});
 
@@ -271,13 +270,58 @@
         });
     }
 
+    function loadCachedCatalogText() {
+        try {
+            const raw = localStorage.getItem(CATALOG_CACHE_STORAGE_KEY);
+            if (!raw) return "";
+            const payload = JSON.parse(raw);
+            if (!payload || payload.sourceUrl !== sourceUrl || !payload.text || !payload.savedAt) {
+                return "";
+            }
+            if ((Date.now() - Number(payload.savedAt)) > CATALOG_CACHE_DURATION_MS) {
+                return "";
+            }
+            return String(payload.text);
+        } catch (error) {
+            return "";
+        }
+    }
+
+    function saveCachedCatalogText(text) {
+        try {
+            localStorage.setItem(CATALOG_CACHE_STORAGE_KEY, JSON.stringify({
+                sourceUrl,
+                text,
+                savedAt: Date.now()
+            }));
+        } catch (error) {
+            // Ignore cache write failures and continue with network-only behavior.
+        }
+    }
+
+    async function fetchCatalogText() {
+        const cachedText = loadCachedCatalogText();
+        if (cachedText) {
+            return cachedText;
+        }
+
+        const response = await fetch(sourceUrl, { cache: "force-cache" });
+        if (!response.ok) {
+            throw new Error("Source produits indisponible");
+        }
+
+        const text = await response.text();
+        saveCachedCatalogText(text);
+        return text;
+    }
+
     function displayPrice(value) {
         const parsed = parsePrice(value);
         return parsed > 0 ? formatPrice(parsed) : clean(value);
     }
 
-    function driveImageUrl(fileId) {
-        return `https://drive.google.com/thumbnail?id=${fileId}&sz=w1600`;
+    function driveImageUrl(fileId, width = 1600) {
+        return `https://drive.google.com/thumbnail?id=${fileId}&sz=w${width}`;
     }
 
     function extractDriveId(url) {
@@ -303,6 +347,26 @@
         }
 
         return value;
+    }
+
+    function photoUrlForWidth(photo, width) {
+        const normalized = normalizePhotoUrl(photo);
+        if (!normalized) return "";
+
+        const fileId = extractDriveId(normalized);
+        return fileId ? driveImageUrl(fileId, width) : normalized;
+    }
+
+    function photoVariant(photo, variant = "detail") {
+        const widths = {
+            thumb: 240,
+            cart: 280,
+            mini: 720,
+            card: 900,
+            detail: 1600
+        };
+
+        return photoUrlForWidth(photo, widths[variant] || widths.detail);
     }
 
     function photosOf(product) {
@@ -395,7 +459,7 @@
         const unavailable = isUnavailable(product);
         const label = unavailable ? "Article indisponible" : "Ajouter au panier";
         const photos = photosOf(product);
-        const mainPhoto = photos[0] || DEFAULT_IMAGE_FALLBACK;
+        const mainPhoto = photoVariant(photos[0], "cart") || DEFAULT_IMAGE_FALLBACK;
 
         return `
             <button
@@ -416,11 +480,11 @@
 
     function catalogCard(product) {
         const photos = photosOf(product);
-        const mainPhoto = photos[0] || DEFAULT_IMAGE_FALLBACK;
-        const fallbackPhoto = photos[1] || DEFAULT_IMAGE_FALLBACK;
+        const mainPhoto = photoVariant(photos[0], "card") || DEFAULT_IMAGE_FALLBACK;
+        const fallbackPhoto = photoVariant(photos[1], "card") || DEFAULT_IMAGE_FALLBACK;
         const thumbnails = photos.map((photo, index) => `
-            <button class="catalog-card__thumb${index === 0 ? " is-active" : ""}" type="button" data-photo="${photo}" aria-label="Voir la photo ${index + 1}">
-                <img src="${photo}" alt="" data-fallback-photo="${escapeAttribute(index === 0 ? fallbackPhoto : DEFAULT_IMAGE_FALLBACK)}">
+            <button class="catalog-card__thumb${index === 0 ? " is-active" : ""}" type="button" data-photo="${photoVariant(photo, "card")}" aria-label="Voir la photo ${index + 1}">
+                <img src="${photoVariant(photo, "thumb")}" alt="" loading="lazy" decoding="async" data-fallback-photo="${escapeAttribute(index === 0 ? fallbackPhoto : DEFAULT_IMAGE_FALLBACK)}">
             </button>
         `).join("");
 
@@ -428,7 +492,7 @@
             <article class="catalog-card">
                 <div class="catalog-card__media">
                     <a href="${productPage(product)}" class="catalog-card__link" aria-label="Voir ${escapeAttribute(product.nom)}">
-                        <img class="catalog-card__image" src="${mainPhoto}" alt="" data-fallback-photo="${escapeAttribute(fallbackPhoto)}">
+                        <img class="catalog-card__image" src="${mainPhoto}" alt="" loading="lazy" decoding="async" data-fallback-photo="${escapeAttribute(fallbackPhoto)}">
                     </a>
                 </div>
                 ${photos.length > 1 ? `<div class="catalog-card__thumbs">${thumbnails}</div>` : ""}
@@ -449,13 +513,13 @@
 
     function miniCard(product) {
         const photos = photosOf(product);
-        const mainPhoto = photos[0] || DEFAULT_IMAGE_FALLBACK;
-        const fallbackPhoto = photos[1] || DEFAULT_IMAGE_FALLBACK;
+        const mainPhoto = photoVariant(photos[0], "mini") || DEFAULT_IMAGE_FALLBACK;
+        const fallbackPhoto = photoVariant(photos[1], "mini") || DEFAULT_IMAGE_FALLBACK;
 
         return `
             <article class="mini-product">
                 <a href="${productPage(product)}" aria-label="Voir l'article">
-                    <img src="${mainPhoto}" alt="" data-fallback-photo="${escapeAttribute(fallbackPhoto)}">
+                    <img src="${mainPhoto}" alt="" loading="lazy" decoding="async" data-fallback-photo="${escapeAttribute(fallbackPhoto)}">
                     <h3>${product.nom}</h3>
                     ${sizeMarkup(product, "mini-product__size")}
                     ${priceMarkup(product, "mini-product__price")}
@@ -467,18 +531,18 @@
 
     function detailView(product) {
         const photos = photosOf(product);
-        const mainPhoto = photos[0] || DEFAULT_IMAGE_FALLBACK;
-        const fallbackPhoto = photos[1] || DEFAULT_IMAGE_FALLBACK;
+        const mainPhoto = photoVariant(photos[0], "detail") || DEFAULT_IMAGE_FALLBACK;
+        const fallbackPhoto = photoVariant(photos[1], "detail") || DEFAULT_IMAGE_FALLBACK;
         const thumbnails = photos.map((photo, index) => `
-            <button class="product-detail__thumb${index === 0 ? " is-active" : ""}" type="button" data-photo="${photo}" aria-label="Voir la photo ${index + 1}">
-                <img src="${photo}" alt="" data-fallback-photo="${escapeAttribute(index === 0 ? fallbackPhoto : DEFAULT_IMAGE_FALLBACK)}">
+            <button class="product-detail__thumb${index === 0 ? " is-active" : ""}" type="button" data-photo="${photoVariant(photo, "detail")}" aria-label="Voir la photo ${index + 1}">
+                <img src="${photoVariant(photo, "thumb")}" alt="" loading="lazy" decoding="async" data-fallback-photo="${escapeAttribute(index === 0 ? fallbackPhoto : DEFAULT_IMAGE_FALLBACK)}">
             </button>
         `).join("");
 
         return `
             <article class="product-detail-card">
                 <div class="product-detail__media">
-                    <img class="product-detail__image" src="${mainPhoto}" alt="" data-fallback-photo="${escapeAttribute(fallbackPhoto)}">
+                    <img class="product-detail__image" src="${mainPhoto}" alt="" decoding="async" fetchpriority="high" data-fallback-photo="${escapeAttribute(fallbackPhoto)}">
                     ${photos.length > 1 ? `<div class="product-detail__thumbs">${thumbnails}</div>` : ""}
                 </div>
                 <div class="product-detail__content">
@@ -2965,11 +3029,7 @@
     }
 
     Promise.all([
-        fetch(cacheSafeSourceUrl)
-            .then((response) => {
-                if (!response.ok) throw new Error("Source produits indisponible");
-                return response.text();
-            }),
+        fetchCatalogText(),
         fetchAvailabilityOverrides()
     ])
         .then(([text, unavailableIds]) => {
