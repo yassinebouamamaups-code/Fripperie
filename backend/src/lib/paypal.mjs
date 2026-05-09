@@ -3,6 +3,8 @@ import { config, paypalApiBase } from "../config.mjs";
 import { httpError } from "./http.mjs";
 
 export async function createPayPalOrder(order) {
+  const itemTotal = order.items.reduce((sum, item) => sum + (item.unitAmount * item.quantity), 0);
+  const shippingAmount = Number(order.shipping?.shippingAmount || 0);
   const body = {
     intent: "CAPTURE",
     purchase_units: [
@@ -10,14 +12,20 @@ export async function createPayPalOrder(order) {
         reference_id: order.orderNumber,
         custom_id: order.orderNumber,
         invoice_id: order.invoiceNumber,
-        description: `Commande ${order.orderNumber}`,
+        description: order.promotion?.code
+          ? `Commande ${order.orderNumber} - promo ${order.promotion.code}`
+          : `Commande ${order.orderNumber}`,
         amount: {
           currency_code: "EUR",
           value: order.totalAmount.toFixed(2),
           breakdown: {
             item_total: {
               currency_code: "EUR",
-              value: order.totalAmount.toFixed(2)
+              value: itemTotal.toFixed(2)
+            },
+            shipping: {
+              currency_code: "EUR",
+              value: shippingAmount.toFixed(2)
             }
           }
         },
@@ -38,7 +46,7 @@ export async function createPayPalOrder(order) {
             address_line_1: order.customer.addressLine1,
             admin_area_2: order.customer.city,
             postal_code: order.customer.postalCode,
-            country_code: "FR"
+            country_code: order.shipping?.country || "FR"
           }
         }
       }

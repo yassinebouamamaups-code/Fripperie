@@ -10,16 +10,29 @@ export async function createStripeCheckoutSession(order) {
 
   const params = new URLSearchParams();
   params.set("mode", "payment");
-  params.set("ui_mode", "custom");
-  params.set("return_url", `${config.appBaseUrl}${config.stripe.successPath}?session_id={CHECKOUT_SESSION_ID}&order=${encodeURIComponent(order.orderNumber)}`);
+  if (config.stripe.checkoutMode === "redirect") {
+    params.set("success_url", `${config.appBaseUrl}${config.stripe.successPath}?session_id={CHECKOUT_SESSION_ID}&order=${encodeURIComponent(order.orderNumber)}`);
+    params.set("cancel_url", `${config.appBaseUrl}${config.stripe.cancelPath}?order=${encodeURIComponent(order.orderNumber)}`);
+  } else {
+    params.set("ui_mode", "custom");
+    params.set("return_url", `${config.appBaseUrl}${config.stripe.successPath}?session_id={CHECKOUT_SESSION_ID}&order=${encodeURIComponent(order.orderNumber)}`);
+  }
   params.set("customer_email", order.customer.email);
   params.set("customer_creation", "if_required");
   params.set("client_reference_id", order.orderNumber);
   params.set("metadata[order_number]", order.orderNumber);
   params.set("metadata[invoice_number]", order.invoiceNumber);
   params.set("metadata[payment_provider]", "stripe");
+  if (order.promotion?.code) {
+    params.set("metadata[promo_code]", order.promotion.code);
+    params.set("metadata[promo_percent_off]", String(order.promotion.percentOff));
+  }
   params.set("payment_intent_data[metadata][order_number]", order.orderNumber);
   params.set("payment_intent_data[metadata][invoice_number]", order.invoiceNumber);
+  if (order.promotion?.code) {
+    params.set("payment_intent_data[metadata][promo_code]", order.promotion.code);
+    params.set("payment_intent_data[metadata][promo_percent_off]", String(order.promotion.percentOff));
+  }
 
   order.items.forEach((item, index) => {
     params.set(`line_items[${index}][quantity]`, String(item.quantity));

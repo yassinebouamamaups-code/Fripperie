@@ -54,6 +54,13 @@ export async function createShipmentForOrder(order) {
 
   const selectedOption = order.shipping.selectedOption;
   const shippingMethod = await resolveLiveShippingMethod(selectedOption, order);
+  console.log("[sendcloud] shipping method selected", {
+    orderNumber: order.orderNumber,
+    selectedOptionId: selectedOption.id,
+    selectedOptionLabel: selectedOption.label,
+    selectedServicePoint: summarizeServicePoint(order.shipping?.selectedServicePoint),
+    shippingMethod: summarizeShippingMethod(shippingMethod)
+  });
   const createdShipment = await createShipment(order, shippingMethod);
   const firstParcel = firstShipmentParcel(createdShipment);
   const labelLink = findShipmentLabelLink(createdShipment, firstParcel);
@@ -160,7 +167,15 @@ async function resolveLiveShippingMethod(selectedOption, order) {
     servicePointId: order.shipping?.selectedServicePoint?.servicePointId || ""
   });
 
-  const matched = methods.find((method) => shippingMethodMatchesOption(method, selectedOption));
+  console.log("[sendcloud] shipping methods received", {
+    orderNumber: order.orderNumber,
+    selectedOptionId: selectedOption?.id,
+    selectedServicePoint: summarizeServicePoint(order.shipping?.selectedServicePoint),
+    preferredKeyword: preferredShippingMethodKeyword(selectedOption, order),
+    methods: methods.map((method) => summarizeShippingMethod(method))
+  });
+
+  const matched = chooseBestShippingMethod(methods, selectedOption, order);
   if (!matched) {
     throw httpError(
       502,
@@ -215,6 +230,14 @@ async function createShipment(order, shippingMethod) {
       shippingMethod
     );
   }
+
+  console.log("[sendcloud] shipment announce inputs", {
+    orderNumber: order.orderNumber,
+    selectedOptionId: order.shipping?.selectedOption?.id || "",
+    selectedServicePoint: summarizeServicePoint(selectedServicePoint),
+    shippingMethod: summarizeShippingMethod(shippingMethod),
+    shippingOptionCode
+  });
 
   const shipmentPayload = {
     order_number: order.orderNumber,
@@ -437,15 +460,15 @@ function findShipmentLabelLink(shipment, parcel) {
     ? parcel.documents.find((document) => clean(document?.type).toLowerCase() === "label")
     : null;
 
-  return clean(parcelLabel?.link)
-    || clean(shipment?.label?.normal_printer)
-    || clean(shipment?.label?.printer)
-    || clean(parcel?.label?.normal_printer)
-    || clean(parcel?.label?.printer);
+  return cleanRemoteLink(parcelLabel?.link)
+    || cleanRemoteLink(shipment?.label?.normal_printer)
+    || cleanRemoteLink(shipment?.label?.printer)
+    || cleanRemoteLink(parcel?.label?.normal_printer)
+    || cleanRemoteLink(parcel?.label?.printer);
 }
 
 function extractShipmentLabelLink(shipment) {
-  return clean(
+  return cleanRemoteLink(
     shipment?.label?.normal_printer
     || shipment?.label?.printer
     || shipment?.label?.label_printer
@@ -453,6 +476,7 @@ function extractShipmentLabelLink(shipment) {
     || shipment?.rawParcel?.label?.printer
     || shipment?.rawParcel?.label?.label_printer
     || shipment?.rawParcel?.label
+    || shipment?.rawParcel?.documents?.find?.((document) => clean(document?.type).toLowerCase() === "label")?.link
     || findShipmentLabelLink(shipment?.rawShipment, shipment?.rawParcel)
   );
 }
@@ -519,6 +543,146 @@ function shippingMethodMatchesOption(method, option) {
   return true;
 }
 
+function chooseBestShippingMethod(methods, option, order) {
+  const matchingMethods = methods.filter((method) => shippingMethodMatchesOption(method, option));
+  if (!matchingMethods.length) {
+    return null;
+  }
+
+  const rankedMethods = matchingMethods
+    .map((method, index) => ({
+      method,
+      index,
+      score: scoreShippingMethod(method, option, order)
+    }))
+    .sort((left, right) => {
+      if (right.score !== left.score) {
+        return right.score - left.score;
+      }
+      return left.index - right.index;
+    });
+
+  return rankedMethods[0]?.method || matchingMethods[0];
+}
+
+function preferredShippingMethodKeyword(option, order) {
+  const optionId = clean(option?.id).toLowerCase();
+  const servicePoint = order?.shipping?.selectedServicePoint;
+  const servicePointLabel = [
+    clean(servicePoint?.name),
+    clean(servicePoint?.carrier)
+  ].join(" ").toLowerCase();
+
+  if (optionId === "mondial-relay" && /\blocker\b/.test(servicePointLabel)) {
+    return "locker";
+  }
+
+  return "";
+}
+
+function preferredShippingMethodKeywords(option, order) {
+  const keywords = [];
+  const explicitKeyword = preferredShippingMethodKeyword(option, order);
+  if (explicitKeyword) {
+    keywords.push(explicitKeyword);
+  }
+
+  const optionType = clean(option?.type).toLowerCase();
+  if (optionType === "service_point") {
+    keywords.push("relay", "relais", "pickup", "point");
+  }
+
+  if (optionType === "home") {
+    keywords.push("domicile", "home");
+  }
+
+  return Array.from(new Set(keywords.filter(Boolean)));
+}
+
+function shippingMethodContainsKeyword(method, keyword) {
+  const normalizedKeyword = clean(keyword).toLowerCase();
+  if (!normalizedKeyword) {
+    return false;
+  }
+
+  const haystack = [
+    clean(method?.name),
+    clean(method?.shipping_option_code),
+    clean(method?.code),
+    clean(method?.shipping_product_code)
+  ].join(" ").toLowerCase();
+
+  return haystack.includes(normalizedKeyword);
+}
+
+function isInternationalShippingMethod(method) {
+  return shippingMethodContainsKeyword(method, "international");
+}
+
+function getOrderPackageWeightKg(order) {
+  return parseNumber(
+    order?.shipping?.package?.weightKg
+    || order?.shipping?.selectedOption?.package?.weightKg
+    || config.shipping.defaultWeightKg,
+    0
+  );
+}
+
+function shippingMethodSupportsWeight(method, targetWeightKg) {
+  const minWeight = parseNumber(method?.min_weight, null);
+  const maxWeight = parseNumber(method?.max_weight, null);
+
+  if (!Number.isFinite(targetWeightKg) || targetWeightKg <= 0) {
+    return true;
+  }
+
+  if (!Number.isFinite(minWeight) && !Number.isFinite(maxWeight)) {
+    return true;
+  }
+
+  if (Number.isFinite(minWeight) && targetWeightKg < minWeight) {
+    return false;
+  }
+
+  if (Number.isFinite(maxWeight) && targetWeightKg > maxWeight) {
+    return false;
+  }
+
+  return true;
+}
+
+function scoreShippingMethod(method, option, order) {
+  let score = 0;
+  const normalizedCountry = normalizeCountryCode(order?.shipping?.country || config.shipping.defaultCountry);
+  const packageWeightKg = getOrderPackageWeightKg(order);
+  const optionType = clean(option?.type).toLowerCase();
+  const servicePointInput = clean(method?.service_point_input).toLowerCase();
+
+  if (normalizedCountry === "FR" && !isInternationalShippingMethod(method)) {
+    score += 40;
+  }
+
+  if (packageWeightKg > 0 && shippingMethodSupportsWeight(method, packageWeightKg)) {
+    score += 35;
+  }
+
+  if (optionType === "service_point" && servicePointInput === "required") {
+    score += 25;
+  }
+
+  if (optionType === "home" && servicePointInput !== "required") {
+    score += 25;
+  }
+
+  for (const keyword of preferredShippingMethodKeywords(option, order)) {
+    if (shippingMethodContainsKeyword(method, keyword)) {
+      score += 10;
+    }
+  }
+
+  return score;
+}
+
 function buildEstimatedLabel(minDays, maxDays) {
   if (minDays && maxDays) {
     return minDays === maxDays
@@ -581,4 +745,39 @@ function normalizeOrderServicePoint(value) {
 
 function clean(value) {
   return String(value || "").trim();
+}
+
+function summarizeShippingMethod(method) {
+  return {
+    id: clean(method?.id),
+    name: clean(method?.name),
+    carrier: clean(method?.carrier || method?.carrier_name),
+    code: clean(method?.code),
+    shipping_option_code: clean(method?.shipping_option_code),
+    shipping_product_code: clean(method?.shipping_product_code)
+  };
+}
+
+function summarizeServicePoint(servicePoint) {
+  if (!servicePoint) {
+    return null;
+  }
+
+  return {
+    servicePointId: clean(servicePoint?.servicePointId ?? servicePoint?.id),
+    postNumber: clean(servicePoint?.postNumber),
+    carrier: clean(servicePoint?.carrier),
+    name: clean(servicePoint?.name),
+    postalCode: clean(servicePoint?.postalCode),
+    city: clean(servicePoint?.city)
+  };
+}
+
+function cleanRemoteLink(value) {
+  const normalized = clean(value);
+  if (!normalized) return "";
+  if (["null", "undefined", "[object Object]"].includes(normalized.toLowerCase())) {
+    return "";
+  }
+  return /^https?:\/\//i.test(normalized) ? normalized : "";
 }

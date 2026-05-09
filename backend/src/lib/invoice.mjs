@@ -12,6 +12,8 @@ export function formatPrice(value) {
 export function buildInvoiceHtml(order, options = {}) {
   const footerLinkHtml = buildInvoiceFooterLinkHtml(order, options);
   const shippingAmount = Number(order.shipping?.shippingAmount || 0);
+  const originalItemsSubtotalAmount = Number(order.originalItemsSubtotalAmount || order.itemsSubtotalAmount || 0);
+  const promotionDiscountAmount = Number(order.promotion?.discountAmount || 0);
   const itemRows = order.items.map((item) => `
     <tr>
       <td>${escapeHtml(item.name)}${item.size ? `<br><small>Taille : ${escapeHtml(item.size)}</small>` : ""}</td>
@@ -121,7 +123,10 @@ export function buildInvoiceHtml(order, options = {}) {
     </div>
 
     <div class="totals">
-      <div><span>Sous-total articles</span><span>${escapeHtml(formatPrice(order.itemsSubtotalAmount || order.totalAmount))}</span></div>
+      <div><span>Sous-total articles</span><span>${escapeHtml(formatPrice(originalItemsSubtotalAmount || order.totalAmount))}</span></div>
+      ${promotionDiscountAmount > 0
+        ? `<div><span>Code promo${order.promotion?.code ? ` (${escapeHtml(order.promotion.code)})` : ""}</span><span>-${escapeHtml(formatPrice(promotionDiscountAmount))}</span></div>`
+        : ""}
       <div><span>Livraison</span><span>${escapeHtml(formatPrice(shippingAmount))}</span></div>
       <div><strong>Total</strong><strong>${escapeHtml(formatPrice(order.totalAmount))}</strong></div>
     </div>
@@ -155,15 +160,7 @@ function buildInvoiceFooterLinkHtml(order, options) {
     shipment?.trackingUrl
     || shipment?.sendcloudTrackingUrl
   );
-  const shippingLabelUrl = cleanLink(
-    shipment?.label?.normal_printer
-    || shipment?.label?.printer
-    || shipment?.label?.label_printer
-    || shipment?.rawParcel?.label?.normal_printer
-    || shipment?.rawParcel?.label?.printer
-    || shipment?.rawParcel?.label?.label_printer
-    || shipment?.rawParcel?.label
-  );
+  const shippingLabelUrl = buildShippingLabelLink(order);
 
   if (audience === "seller" && shippingLabelUrl) {
     return `<p class="footer-link">Etiquette d'envoi : <a href="${escapeHtml(shippingLabelUrl)}">Telecharger l'etiquette</a></p>`;
@@ -179,6 +176,12 @@ function buildInvoiceFooterLinkHtml(order, options) {
 function cleanLink(value) {
   const link = String(value || "").trim();
   return /^https?:\/\//i.test(link) ? link : "";
+}
+
+function buildShippingLabelLink(order) {
+  if (!order.shipping?.shipment) return "";
+  const orderNumber = encodeURIComponent(order.orderNumber || "");
+  return cleanLink(`${config.appBaseUrl}/api/orders/${orderNumber}/shipping-label`);
 }
 
 function escapeHtml(value) {

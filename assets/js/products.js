@@ -10,7 +10,6 @@
     const STRIPE_PENDING_STORAGE_KEY = "laGoutteDeMerPendingStripeSession";
     const DEFAULT_IMAGE_FALLBACK = "";
     const status = document.querySelector("[data-products-status]");
-    const catalogHead = document.querySelector(".catalog-head");
     const sourceUrl = clean(window.RENDER_RUNTIME_CONFIG?.catalogSourceUrl)
         || clean(window.PRODUCTS_SOURCE_URL)
         || "https://docs.google.com/spreadsheets/d/1yZVWg-Ypzd2VtFE4tVf0XmVVvTqzgFu8TTq4KAyvsb0/export?format=csv&gid=1348794459";
@@ -49,12 +48,6 @@
         loading: false,
         error: ""
     };
-    let catalogFiltersState = {
-        products: [],
-        size: "all",
-        sort: "default"
-    };
-    let catalogControls = null;
 
     function resolveCheckoutConfig(customConfig) {
         const seller = customConfig.seller || {};
@@ -72,9 +65,9 @@
                 brandName: seller.brandName || "La Goutte de Mer Shop",
                 email: seller.email || "lagouttedemer@gmail.com",
                 phone: seller.phone || "+33 7 66 88 42 22",
-                addressLine1: seller.addressLine1 || "2 Rue Claude Debussy",
+                addressLine1: seller.addressLine1 || "Seysses",
                 city: seller.city || "Seysses",
-                postalCode: seller.postalCode || "31600",
+                postalCode: seller.postalCode || "",
                 country: seller.country || "France",
                 vatNumber: seller.vatNumber || "",
                 siret: seller.siret || "",
@@ -489,11 +482,11 @@
                     ${sizeMarkup(product, "product-detail__size")}
                     <p class="product-detail__description">${product.description || ""}</p>
                     ${priceMarkup(product, "product-detail__price")}
+                    ${productSupportMarkup()}
                     <div class="product-detail__actions">
                         ${cartButtonMarkup(product, "product-detail__cart")}
                         <a href="${categoryPage(product)}" class="button button--small">Retour categorie</a>
                     </div>
-                    ${productSupportMarkup()}
                 </div>
             </article>
         `;
@@ -515,7 +508,7 @@
                 ? `<a href="${escapeAttribute(sourcingInstagramUrl)}" class="button button--small product-detail__support-button" target="_blank" rel="noopener">Voir la page Instagram ${escapeHtml(sourcingInstagramLabel)}</a>`
                 : "",
             affordableInstagramUrl
-                ? `<a href="${escapeAttribute(affordableInstagramUrl)}" class="button button--small product-detail__support-button" target="_blank" rel="noopener">Voir Instagram ${escapeHtml(affordableInstagramLabel)}</a>`
+                ? `<a href="${escapeAttribute(affordableInstagramUrl)}" class="button button--small product-detail__support-button" target="_blank" rel="noopener">Consulter ${escapeHtml(affordableInstagramLabel)}</a>`
                 : ""
         ].filter(Boolean).join("");
 
@@ -526,143 +519,12 @@
         return `
             <aside class="product-detail__support" aria-label="Aide au choix">
                 <p class="product-detail__support-eyebrow">Besoin d'aide pour choisir ?</p>
-                <p class="product-detail__support-text">Une question sur les mesures, la coupe ou l'etat d'un article ? Ecris-moi sur WhatsApp, retrouve-moi directement sur Instagram.</p>
+                <p class="product-detail__support-text">Une question sur les mesures, la coupe ou l'etat d'un article ? Ecris-moi sur WhatsApp, retrouve-moi directement sur Instagram, ou consulte la page Instagram ${escapeHtml(affordableInstagramLabel)} si tu cherches des articles ou des pieces precises a prix plus abordables.</p>
                 <div class="product-detail__support-actions">
                     ${actions}
                 </div>
             </aside>
-            ${affordableInstagramUrl ? `
-                <aside class="product-help-bubble" aria-label="Service shopping personnalise">
-                    <p>Tu ne trouves pas chaussure a ton pied ? <a href="${escapeAttribute(affordableInstagramUrl)}" target="_blank" rel="noopener">Ecris moi sur Instagram ${escapeHtml(affordableInstagramLabel)}</a> pour un service shopping plus personnalise !</p>
-                </aside>
-            ` : ""}
         `;
-    }
-
-    function ensureCatalogControls(products) {
-        if (!productGrid || !catalogHead) return null;
-
-        if (!catalogControls) {
-            const controls = document.createElement("div");
-            controls.className = "catalog-toolbar";
-            controls.innerHTML = `
-                <label class="catalog-toolbar__field">
-                    <span>Taille</span>
-                    <select data-catalog-size-filter>
-                        <option value="all">Toutes</option>
-                    </select>
-                </label>
-                <label class="catalog-toolbar__field">
-                    <span>Trier par prix</span>
-                    <select data-catalog-price-sort>
-                        <option value="default">Par defaut</option>
-                        <option value="price-asc">Croissant</option>
-                        <option value="price-desc">Decroissant</option>
-                    </select>
-                </label>
-            `;
-
-            const sizeSelect = controls.querySelector("[data-catalog-size-filter]");
-            const sortSelect = controls.querySelector("[data-catalog-price-sort]");
-
-            sizeSelect.addEventListener("change", () => {
-                catalogFiltersState.size = clean(sizeSelect.value) || "all";
-                renderCatalogGrid();
-            });
-
-            sortSelect.addEventListener("change", () => {
-                catalogFiltersState.sort = clean(sortSelect.value) || "default";
-                renderCatalogGrid();
-            });
-
-            catalogHead.insertAdjacentElement("afterend", controls);
-            catalogControls = {
-                root: controls,
-                sizeSelect,
-                sortSelect
-            };
-        }
-
-        const sizes = Array.from(new Set(
-            products
-                .map((product) => clean(product.taille))
-                .filter(Boolean)
-        )).sort(compareSizes);
-
-        const currentValue = sizes.includes(catalogFiltersState.size) ? catalogFiltersState.size : "all";
-        catalogControls.sizeSelect.innerHTML = [
-            `<option value="all">Toutes</option>`,
-            ...sizes.map((size) => `<option value="${escapeAttribute(size)}">${escapeHtml(size)}</option>`)
-        ].join("");
-        catalogControls.sizeSelect.value = currentValue;
-        catalogFiltersState.size = currentValue;
-        catalogControls.sortSelect.value = catalogFiltersState.sort;
-        catalogControls.root.hidden = false;
-
-        return catalogControls;
-    }
-
-    function renderCatalogGrid() {
-        if (!productGrid) return;
-
-        let visibleProducts = [...catalogFiltersState.products];
-
-        if (catalogFiltersState.size !== "all") {
-            visibleProducts = visibleProducts.filter((product) => clean(product.taille) === catalogFiltersState.size);
-        }
-
-        if (catalogFiltersState.sort === "price-asc") {
-            visibleProducts.sort((left, right) => priceValueOf(left) - priceValueOf(right));
-        } else if (catalogFiltersState.sort === "price-desc") {
-            visibleProducts.sort((left, right) => priceValueOf(right) - priceValueOf(left));
-        }
-
-        if (!visibleProducts.length) {
-            productGrid.innerHTML = `<p class="catalog-empty">Aucun article ne correspond a ces filtres.</p>`;
-            updateCatalogStatus(0, catalogFiltersState.products.length);
-            return;
-        }
-
-        productGrid.innerHTML = visibleProducts.map(catalogCard).join("");
-        updateCatalogStatus(visibleProducts.length, catalogFiltersState.products.length);
-    }
-
-    function updateCatalogStatus(visibleCount, totalCount) {
-        if (!status) return;
-        if (!totalCount) {
-            status.textContent = "0 article";
-            return;
-        }
-
-        const visibleLabel = `${visibleCount} article${visibleCount > 1 ? "s" : ""}`;
-        if (visibleCount === totalCount) {
-            status.textContent = visibleLabel;
-            return;
-        }
-
-        const totalLabel = `${totalCount} article${totalCount > 1 ? "s" : ""}`;
-        status.textContent = `${visibleLabel} sur ${totalLabel}`;
-    }
-
-    function compareSizes(left, right) {
-        const leftRank = sizeRank(left);
-        const rightRank = sizeRank(right);
-        if (leftRank !== rightRank) {
-            return leftRank - rightRank;
-        }
-
-        return clean(left).localeCompare(clean(right), "fr", { numeric: true, sensitivity: "base" });
-    }
-
-    function sizeRank(value) {
-        const normalized = clean(value).toUpperCase();
-        const order = ["XXS", "XS", "S", "M", "L", "XL", "XXL", "TU"];
-        const index = order.indexOf(normalized);
-        return index === -1 ? 999 : index;
-    }
-
-    function priceValueOf(product) {
-        return parsePrice(productPrice(product));
     }
 
     function renderCatalog(products) {
@@ -670,19 +532,14 @@
 
         const category = normalizeCategory(productGrid.dataset.category);
         const filtered = products.filter((product) => normalizeCategory(product.categorie) === category);
-        catalogFiltersState.products = filtered;
-
         if (!filtered.length) {
-            if (catalogControls?.root) {
-                catalogControls.root.hidden = true;
-            }
             productGrid.innerHTML = `<p class="catalog-empty">Aucun article disponible pour le moment.</p>`;
-            updateCatalogStatus(0, 0);
+            if (status) status.textContent = "0 article";
             return;
         }
 
-        ensureCatalogControls(filtered);
-        renderCatalogGrid();
+        productGrid.innerHTML = filtered.map(catalogCard).join("");
+        if (status) status.textContent = `${filtered.length} article${filtered.length > 1 ? "s" : ""}`;
     }
 
     function renderSelection(products) {
@@ -1003,8 +860,8 @@
         };
 
         checkoutElements.stripeSection.hidden = false;
+        checkoutElements.methodsSection.appendChild(checkoutElements.stripeSection);
         renderPaymentMethods();
-        positionStripeSection();
         syncCheckoutPaymentUi();
 
         backdrop.addEventListener("click", closeCheckout);
@@ -1213,6 +1070,19 @@
         }
     }
 
+    function getShippingOptionDisplayOrder(option) {
+        const optionId = clean(option?.id);
+        const priorityMap = {
+            "colissimo-relay": 0,
+            "mondial-relay": 1,
+            "chronopost-relay": 2,
+            "colissimo-home": 3,
+            "chronopost-home": 4
+        };
+
+        return priorityMap[optionId] ?? 99;
+    }
+
     function renderShippingOptions() {
         if (!checkoutElements?.shippingOptions || !checkoutElements?.shippingFeedback) {
             return;
@@ -1236,7 +1106,9 @@
             return;
         }
 
-        const options = checkoutShippingState.options;
+        const options = [...checkoutShippingState.options].sort((left, right) => {
+            return getShippingOptionDisplayOrder(left) - getShippingOptionDisplayOrder(right);
+        });
         checkoutElements.shippingFeedback.textContent = "";
         checkoutElements.shippingOptions.innerHTML = options.map((option, index) => `
             <label class="shipping-option">
@@ -1244,7 +1116,7 @@
                 <span class="shipping-option__content">
                     <span class="shipping-option__main">
                         <strong>${escapeHtml(option.label)}</strong>
-                        ${option.description ? `<small>${escapeHtml(option.description)}</small>` : ""}
+                        ${option.description && !option.requiresServicePoint ? `<small>${escapeHtml(option.description)}</small>` : ""}
                         ${option.estimatedLabel ? `<small>${escapeHtml(option.estimatedLabel)}</small>` : ""}
                         ${option.requiresServicePoint ? renderServicePointSelectionMarkup(option) : ""}
                     </span>
@@ -1252,27 +1124,6 @@
                 </span>
             </label>
         `).join("");
-    }
-
-    function positionStripeSection() {
-        if (!checkoutElements?.stripeSection || !checkoutElements?.paymentMethods) {
-            return;
-        }
-
-        const stripeMethodCard = checkoutElements.paymentMethods.querySelector(".payment-method--stripe");
-        if (!stripeMethodCard) {
-            checkoutElements.methodsSection.appendChild(checkoutElements.stripeSection);
-            return;
-        }
-
-        if (
-            checkoutElements.stripeSection.parentElement === stripeMethodCard.parentElement
-            && checkoutElements.stripeSection.previousElementSibling === stripeMethodCard
-        ) {
-            return;
-        }
-
-        stripeMethodCard.insertAdjacentElement("afterend", checkoutElements.stripeSection);
     }
 
     function getSelectedShippingOptionId() {
@@ -1303,12 +1154,7 @@
                         <strong>${escapeHtml(selectedServicePoint.name || "Point relais selectionne")}</strong>
                         <small>${escapeHtml(formatServicePointAddress(selectedServicePoint))}</small>
                     </span>
-                ` : `
-                    <span class="shipping-option__relay-summary">
-                        <strong>Aucun point relais choisi</strong>
-                        <small>Sélectionnez un point de retrait avant de payer.</small>
-                    </span>
-                `}
+                ` : ""}
                 <span class="shipping-option__relay-actions">
                     <button
                         type="button"
@@ -1333,10 +1179,6 @@
     function handleCheckoutFormChange(event) {
         if (event.target instanceof HTMLInputElement && event.target.name === "paymentMethod") {
             syncCheckoutPaymentUi();
-            if (event.target.value === "stripe") {
-                scheduleStripeAutofillCheck(20);
-            }
-            return;
         }
 
         if (event.target instanceof HTMLInputElement && event.target.name === "shippingOption") {
@@ -1365,15 +1207,14 @@
             return;
         }
 
-        const shouldRefreshShipping = isCheckoutShippingRelevantField(event.target);
         if (
             (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement)
-            && shouldRefreshShipping
+            && !(event.target instanceof HTMLInputElement && event.target.name === "paymentMethod")
         ) {
             scheduleCheckoutShippingRefresh();
         }
 
-        if (getSelectedPaymentMethodId() === "stripe" && isStripeCheckoutRelevantField(event.target)) {
+        if (getSelectedPaymentMethodId() === "stripe") {
             scheduleStripeAutofillCheck();
         }
     }
@@ -1949,38 +1790,6 @@
                 }
             }, delay);
         });
-    }
-
-    function isCheckoutShippingRelevantField(target) {
-        return (
-            target instanceof HTMLInputElement
-            || target instanceof HTMLTextAreaElement
-        ) && [
-            "firstName",
-            "lastName",
-            "email",
-            "phone",
-            "addressLine1",
-            "postalCode",
-            "city",
-            "country"
-        ].includes(clean(target.name));
-    }
-
-    function isStripeCheckoutRelevantField(target) {
-        return (
-            target instanceof HTMLInputElement
-            || target instanceof HTMLTextAreaElement
-        ) && [
-            "firstName",
-            "lastName",
-            "email",
-            "phone",
-            "addressLine1",
-            "postalCode",
-            "city",
-            "country"
-        ].includes(clean(target.name));
     }
 
     async function mountStripePaymentElement(remoteSession, items, customer) {

@@ -41,6 +41,7 @@ export const config = {
     publishableKey: process.env.STRIPE_PUBLISHABLE_KEY || "",
     webhookSecret: process.env.STRIPE_WEBHOOK_SECRET || "",
     currency: (process.env.STRIPE_CURRENCY || "eur").toLowerCase(),
+    checkoutMode: normalizeStripeCheckoutMode(process.env.STRIPE_CHECKOUT_MODE || "custom"),
     successPath: process.env.STRIPE_SUCCESS_PATH || "/payment/stripe/success",
     cancelPath: process.env.STRIPE_CANCEL_PATH || "/payment/stripe/cancel"
   },
@@ -75,6 +76,10 @@ export const config = {
     secretKey: process.env.SENDCLOUD_SECRET_KEY || "",
     senderAddressId: process.env.SENDCLOUD_SENDER_ADDRESS_ID || "",
     shippingOptions: parseJsonEnv(process.env.SENDCLOUD_SHIPPING_OPTIONS_JSON, defaultSendcloudShippingOptions())
+  },
+  promotions: {
+    sourceUrl: process.env.PROMO_SOURCE_URL || "",
+    codes: parseJsonEnv(process.env.PROMO_CODES_JSON, [])
   }
 };
 
@@ -123,6 +128,11 @@ function parsePositiveNumber(value, fallback) {
 
 function cleanEnv(value) {
   return String(value || "").trim();
+}
+
+function normalizeStripeCheckoutMode(value) {
+  const normalized = cleanEnv(value).toLowerCase();
+  return normalized === "redirect" ? "redirect" : "custom";
 }
 
 function defaultSendcloudShippingOptions() {
