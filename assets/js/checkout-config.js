@@ -1,6 +1,6 @@
 window.SHOP_CHECKOUT_CONFIG = {
     backend: {
-        baseUrl: "https://friperie-dev-backend.onrender.com"
+        baseUrl: "https://la-goutte-de-mer-paiements.onrender.com"
     },
     seller: {
         brandName: "La Goutte de Mer Shop",
