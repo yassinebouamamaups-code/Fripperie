@@ -77,7 +77,9 @@
                 support: {
                     whatsappUrl: clean(sellerSupport.whatsappUrl) || "https://wa.me/33608917053",
                     sourcingInstagramUrl: clean(sellerSupport.sourcingInstagramUrl) || "",
-                    sourcingInstagramLabel: clean(sellerSupport.sourcingInstagramLabel) || "@lagouttedemershop"
+                    sourcingInstagramLabel: clean(sellerSupport.sourcingInstagramLabel) || "@lagouttedemershop",
+                    affordableInstagramUrl: clean(sellerSupport.affordableInstagramUrl) || "",
+                    affordableInstagramLabel: clean(sellerSupport.affordableInstagramLabel) || "@maisongouttedemer"
                 }
             },
             documents: {
