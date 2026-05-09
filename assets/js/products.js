@@ -546,9 +546,9 @@
         });
 
         if (selectedSort === "price-asc") {
-            filtered = [...filtered].sort((left, right) => productPrice(left) - productPrice(right));
+            filtered = [...filtered].sort((left, right) => parsePrice(productPrice(left)) - parsePrice(productPrice(right)));
         } else if (selectedSort === "price-desc") {
-            filtered = [...filtered].sort((left, right) => productPrice(right) - productPrice(left));
+            filtered = [...filtered].sort((left, right) => parsePrice(productPrice(right)) - parsePrice(productPrice(left)));
         }
 
         if (!filtered.length) {
