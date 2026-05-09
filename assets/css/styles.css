@@ -391,6 +391,7 @@ a {
     font-size: clamp(25px, 2.5vw, 33px);
     font-weight: 500;
     letter-spacing: 0.08em;
+    
 }
 
 .selection {
