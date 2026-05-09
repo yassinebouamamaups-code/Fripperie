@@ -817,6 +817,40 @@ a {
     gap: 22px;
 }
 
+.catalog-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    align-items: end;
+    margin: 0 auto 28px;
+}
+
+.catalog-toolbar__group {
+    display: grid;
+    gap: 8px;
+    min-width: 220px;
+}
+
+.catalog-toolbar__group label {
+    margin: 0;
+    color: var(--gold);
+    font-family: "Cinzel", Georgia, serif;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+}
+
+.catalog-toolbar__select {
+    min-height: 46px;
+    padding: 0 14px;
+    border: 1px solid rgba(200, 155, 79, 0.32);
+    background: rgba(6, 19, 32, 0.78);
+    color: var(--text);
+    font-family: "Montserrat", sans-serif;
+    font-size: 14px;
+}
+
 .catalog-card {
     display: flex;
     min-width: 0;

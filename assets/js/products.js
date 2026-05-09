@@ -2,6 +2,8 @@
     const productGrid = document.querySelector("[data-products-grid]");
     const selectionGrid = document.querySelector("[data-selection-grid]");
     const productDetail = document.querySelector("[data-product-detail]");
+    const categorySizeFilter = document.querySelector("[data-catalog-size-filter]");
+    const categorySortFilter = document.querySelector("[data-catalog-sort]");
     const hasProductUi = Boolean(productGrid || selectionGrid || productDetail);
 
     const CART_STORAGE_KEY = "laGoutteDeMerCart";
@@ -20,6 +22,7 @@
     const shopConfig = resolveCheckoutConfig(window.SHOP_CHECKOUT_CONFIG || {});
 
     let currentOrder = null;
+    let catalogProducts = [];
     let cartElements = null;
     let checkoutElements = null;
     let stripeClientConfig = null;
@@ -531,7 +534,23 @@
         if (!productGrid) return;
 
         const category = normalizeCategory(productGrid.dataset.category);
-        const filtered = products.filter((product) => normalizeCategory(product.categorie) === category);
+        const categoryProducts = products.filter((product) => normalizeCategory(product.categorie) === category);
+        initializeCatalogControls(categoryProducts);
+
+        const selectedSize = clean(categorySizeFilter?.value);
+        const selectedSort = clean(categorySortFilter?.value);
+
+        let filtered = categoryProducts.filter((product) => {
+            if (!selectedSize) return true;
+            return clean(product.taille) === selectedSize;
+        });
+
+        if (selectedSort === "price-asc") {
+            filtered = [...filtered].sort((left, right) => productPrice(left) - productPrice(right));
+        } else if (selectedSort === "price-desc") {
+            filtered = [...filtered].sort((left, right) => productPrice(right) - productPrice(left));
+        }
+
         if (!filtered.length) {
             productGrid.innerHTML = `<p class="catalog-empty">Aucun article disponible pour le moment.</p>`;
             if (status) status.textContent = "0 article";
@@ -540,6 +559,40 @@
 
         productGrid.innerHTML = filtered.map(catalogCard).join("");
         if (status) status.textContent = `${filtered.length} article${filtered.length > 1 ? "s" : ""}`;
+    }
+
+    function initializeCatalogControls(categoryProducts) {
+        if (!categorySizeFilter && !categorySortFilter) {
+            return;
+        }
+
+        if (categorySizeFilter && categorySizeFilter.dataset.bound !== "true") {
+            categorySizeFilter.dataset.bound = "true";
+            categorySizeFilter.addEventListener("change", () => renderCatalog(catalogProducts));
+        }
+
+        if (categorySortFilter && categorySortFilter.dataset.bound !== "true") {
+            categorySortFilter.dataset.bound = "true";
+            categorySortFilter.addEventListener("change", () => renderCatalog(catalogProducts));
+        }
+
+        if (categorySizeFilter) {
+            const previousValue = clean(categorySizeFilter.value);
+            const sizes = Array.from(new Set(
+                categoryProducts
+                    .map((product) => clean(product.taille))
+                    .filter(Boolean)
+            )).sort((left, right) => left.localeCompare(right, "fr", { numeric: true, sensitivity: "base" }));
+
+            categorySizeFilter.innerHTML = [
+                `<option value="">Toutes les tailles</option>`,
+                ...sizes.map((size) => `<option value="${escapeAttribute(size)}">${escapeHtml(size)}</option>`)
+            ].join("");
+
+            if (sizes.includes(previousValue)) {
+                categorySizeFilter.value = previousValue;
+            }
+        }
     }
 
     function renderSelection(products) {
@@ -2912,11 +2965,13 @@
         .then(([text, unavailableIds]) => {
             const products = applyAvailabilityOverrides(parseCsv(text), unavailableIds);
             if (!products.length) throw new Error("Aucun produit dans la source");
+            catalogProducts = products;
             renderCatalog(products);
             renderSelection(products);
             renderProductDetail(products);
         })
         .catch(() => {
+            catalogProducts = [];
             renderCatalog([]);
             renderSelection([]);
             renderProductDetail([]);
