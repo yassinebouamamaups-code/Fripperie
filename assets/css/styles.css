@@ -1118,6 +1118,24 @@ a {
     line-height: 1.7;
 }
 
+.product-detail__support-note {
+    margin: 12px 0 0;
+    color: var(--text);
+    font-family: "Montserrat", Arial, sans-serif;
+    font-size: 14px;
+    line-height: 1.7;
+}
+
+.product-detail__support-note a {
+    color: var(--gold-soft);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+.product-detail__support-note a:hover {
+    color: #f2d597;
+}
+
 .product-detail__support-actions {
     display: flex;
     flex-wrap: wrap;
@@ -1127,40 +1145,6 @@ a {
 
 .product-detail__support-button {
     background: transparent;
-}
-
-.product-detail__instagram-bubble {
-    position: fixed;
-    top: 50%;
-    right: 18px;
-    z-index: 120;
-    display: block;
-    width: min(320px, calc(100vw - 48px));
-    padding: 16px 18px;
-    border: 1px solid rgba(200, 155, 79, 0.28);
-    background:
-        linear-gradient(135deg, rgba(200, 155, 79, 0.18), rgba(5, 18, 29, 0.96)),
-        rgba(5, 18, 29, 0.96);
-    box-shadow: 0 18px 32px rgba(0, 0, 0, 0.28);
-    transform: translateY(-50%);
-}
-
-.product-detail__instagram-bubble p {
-    margin: 0;
-    color: var(--text);
-    font-family: "Montserrat", Arial, sans-serif;
-    font-size: 13px;
-    line-height: 1.65;
-}
-
-.product-detail__instagram-bubble a {
-    color: var(--gold-soft);
-    text-decoration: underline;
-    text-underline-offset: 2px;
-}
-
-.product-detail__instagram-bubble a:hover {
-    color: #f2d597;
 }
 
 .product-detail__price {
@@ -1372,7 +1356,7 @@ a {
 }
 
 .separator-luxe::after {
-    content: "âœ¦";
+    content: "✦";
     position: absolute;
     left: 50%;
     top: 50%;
@@ -2614,14 +2598,6 @@ a {
     .cart-floating-button {
         right: max(32px, env(safe-area-inset-right));
         bottom: 87px;
-    }
-
-    .product-detail__instagram-bubble {
-        top: auto;
-        right: max(18px, env(safe-area-inset-right));
-        bottom: 170px;
-        transform: none;
-        width: min(300px, calc(100vw - 36px));
     }
 
     .hero {

@@ -518,23 +518,21 @@
             return "";
         }
 
-        const affordableBubble = affordableInstagramUrl
+        const affordableSupport = affordableInstagramUrl
             ? `
-                <aside class="product-detail__instagram-bubble" aria-label="Service shopping personnalise">
-                    <p>
-                        Tu ne trouves pas chaussure &agrave; ton pied ?
-                        <a href="${escapeAttribute(affordableInstagramUrl)}" target="_blank" rel="noopener">Ecris moi sur instagram ${escapeHtml(affordableInstagramLabel)}</a>
-                        pour un service plus personnalis&eacute; !
-                    </p>
-                </aside>
+                <p class="product-detail__support-note">
+                    Tu ne trouves pas chaussure &agrave; ton pied ?
+                    <a href="${escapeAttribute(affordableInstagramUrl)}" target="_blank" rel="noopener">Ecris moi sur instagram ${escapeHtml(affordableInstagramLabel)}</a>
+                    pour un service plus personnalis&eacute;.
+                </p>
             `
             : "";
 
         return `
-            ${affordableBubble}
             <aside class="product-detail__support" aria-label="Aide au choix">
                 <p class="product-detail__support-eyebrow">Besoin d'aide pour choisir ?</p>
                 <p class="product-detail__support-text">Une question sur les mesures, la coupe ou l'etat d'un article ? Ecris-moi sur WhatsApp, retrouve-moi directement sur Instagram.</p>
+                ${affordableSupport}
                 <div class="product-detail__support-actions">
                     ${actions}
                 </div>
