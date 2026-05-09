@@ -30,6 +30,7 @@
     let stripeMountingSignature = "";
     let stripeAutofillCheckTimer = 0;
     let checkoutShippingRequestId = 0;
+    const preloadedPhotoUrls = new Set();
     let stripeCheckoutMode = "custom";
     let sendcloudServicePointSdkPromise = null;
     let checkoutShippingState = {
@@ -369,6 +370,25 @@
         return photoUrlForWidth(photo, widths[variant] || widths.detail);
     }
 
+    function preloadImageUrl(url) {
+        const imageUrl = clean(url);
+        if (!imageUrl || preloadedPhotoUrls.has(imageUrl)) {
+            return;
+        }
+
+        preloadedPhotoUrls.add(imageUrl);
+        const image = new Image();
+        image.decoding = "async";
+        image.src = imageUrl;
+    }
+
+    function preloadProductDetailGallery(root) {
+        if (!root) return;
+        root.querySelectorAll(".product-detail__thumb[data-photo]").forEach((thumb) => {
+            preloadImageUrl(thumb.dataset.photo);
+        });
+    }
+
     function photosOf(product) {
         const remotePhotos = (product.photos || "")
             .split(/[|;]/)
@@ -705,6 +725,11 @@
 
         productDetail.innerHTML = detailView(product);
         document.title = `${product.nom} - La Goutte de Mer Shop`;
+        if ("requestIdleCallback" in window) {
+            window.requestIdleCallback(() => preloadProductDetailGallery(productDetail), { timeout: 1200 });
+        } else {
+            window.setTimeout(() => preloadProductDetailGallery(productDetail), 180);
+        }
     }
 
     function enableGallery() {
@@ -718,6 +743,18 @@
             image.src = thumb.dataset.photo;
             card.querySelectorAll(".catalog-card__thumb, .product-detail__thumb").forEach((button) => button.classList.remove("is-active"));
             thumb.classList.add("is-active");
+        });
+
+        document.addEventListener("pointerenter", (event) => {
+            const thumb = event.target.closest("[data-photo]");
+            if (!thumb) return;
+            preloadImageUrl(thumb.dataset.photo);
+        }, true);
+
+        document.addEventListener("focusin", (event) => {
+            const thumb = event.target.closest("[data-photo]");
+            if (!thumb) return;
+            preloadImageUrl(thumb.dataset.photo);
         });
     }
 
