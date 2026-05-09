@@ -10,6 +10,7 @@
     const STRIPE_PENDING_STORAGE_KEY = "laGoutteDeMerPendingStripeSession";
     const DEFAULT_IMAGE_FALLBACK = "";
     const status = document.querySelector("[data-products-status]");
+    const catalogHead = document.querySelector(".catalog-head");
     const sourceUrl = clean(window.RENDER_RUNTIME_CONFIG?.catalogSourceUrl)
         || clean(window.PRODUCTS_SOURCE_URL)
         || "https://docs.google.com/spreadsheets/d/1yZVWg-Ypzd2VtFE4tVf0XmVVvTqzgFu8TTq4KAyvsb0/export?format=csv&gid=1348794459";
@@ -48,6 +49,12 @@
         loading: false,
         error: ""
     };
+    let catalogFiltersState = {
+        products: [],
+        size: "all",
+        sort: "default"
+    };
+    let catalogControls = null;
 
     function resolveCheckoutConfig(customConfig) {
         const seller = customConfig.seller || {};
@@ -527,19 +534,150 @@
         `;
     }
 
+    function ensureCatalogControls(products) {
+        if (!productGrid || !catalogHead) return null;
+
+        if (!catalogControls) {
+            const controls = document.createElement("div");
+            controls.className = "catalog-toolbar";
+            controls.innerHTML = `
+                <label class="catalog-toolbar__field">
+                    <span>Taille</span>
+                    <select data-catalog-size-filter>
+                        <option value="all">Toutes</option>
+                    </select>
+                </label>
+                <label class="catalog-toolbar__field">
+                    <span>Trier par prix</span>
+                    <select data-catalog-price-sort>
+                        <option value="default">Par defaut</option>
+                        <option value="price-asc">Croissant</option>
+                        <option value="price-desc">Decroissant</option>
+                    </select>
+                </label>
+            `;
+
+            const sizeSelect = controls.querySelector("[data-catalog-size-filter]");
+            const sortSelect = controls.querySelector("[data-catalog-price-sort]");
+
+            sizeSelect.addEventListener("change", () => {
+                catalogFiltersState.size = clean(sizeSelect.value) || "all";
+                renderCatalogGrid();
+            });
+
+            sortSelect.addEventListener("change", () => {
+                catalogFiltersState.sort = clean(sortSelect.value) || "default";
+                renderCatalogGrid();
+            });
+
+            catalogHead.insertAdjacentElement("afterend", controls);
+            catalogControls = {
+                root: controls,
+                sizeSelect,
+                sortSelect
+            };
+        }
+
+        const sizes = Array.from(new Set(
+            products
+                .map((product) => clean(product.taille))
+                .filter(Boolean)
+        )).sort(compareSizes);
+
+        const currentValue = sizes.includes(catalogFiltersState.size) ? catalogFiltersState.size : "all";
+        catalogControls.sizeSelect.innerHTML = [
+            `<option value="all">Toutes</option>`,
+            ...sizes.map((size) => `<option value="${escapeAttribute(size)}">${escapeHtml(size)}</option>`)
+        ].join("");
+        catalogControls.sizeSelect.value = currentValue;
+        catalogFiltersState.size = currentValue;
+        catalogControls.sortSelect.value = catalogFiltersState.sort;
+        catalogControls.root.hidden = false;
+
+        return catalogControls;
+    }
+
+    function renderCatalogGrid() {
+        if (!productGrid) return;
+
+        let visibleProducts = [...catalogFiltersState.products];
+
+        if (catalogFiltersState.size !== "all") {
+            visibleProducts = visibleProducts.filter((product) => clean(product.taille) === catalogFiltersState.size);
+        }
+
+        if (catalogFiltersState.sort === "price-asc") {
+            visibleProducts.sort((left, right) => priceValueOf(left) - priceValueOf(right));
+        } else if (catalogFiltersState.sort === "price-desc") {
+            visibleProducts.sort((left, right) => priceValueOf(right) - priceValueOf(left));
+        }
+
+        if (!visibleProducts.length) {
+            productGrid.innerHTML = `<p class="catalog-empty">Aucun article ne correspond a ces filtres.</p>`;
+            updateCatalogStatus(0, catalogFiltersState.products.length);
+            return;
+        }
+
+        productGrid.innerHTML = visibleProducts.map(catalogCard).join("");
+        updateCatalogStatus(visibleProducts.length, catalogFiltersState.products.length);
+    }
+
+    function updateCatalogStatus(visibleCount, totalCount) {
+        if (!status) return;
+        if (!totalCount) {
+            status.textContent = "0 article";
+            return;
+        }
+
+        const visibleLabel = `${visibleCount} article${visibleCount > 1 ? "s" : ""}`;
+        if (visibleCount === totalCount) {
+            status.textContent = visibleLabel;
+            return;
+        }
+
+        const totalLabel = `${totalCount} article${totalCount > 1 ? "s" : ""}`;
+        status.textContent = `${visibleLabel} sur ${totalLabel}`;
+    }
+
+    function compareSizes(left, right) {
+        const leftRank = sizeRank(left);
+        const rightRank = sizeRank(right);
+        if (leftRank !== rightRank) {
+            return leftRank - rightRank;
+        }
+
+        return clean(left).localeCompare(clean(right), "fr", { numeric: true, sensitivity: "base" });
+    }
+
+    function sizeRank(value) {
+        const normalized = clean(value).toUpperCase();
+        const order = ["XXS", "XS", "S", "M", "L", "XL", "XXL", "TU"];
+        const index = order.indexOf(normalized);
+        return index === -1 ? 999 : index;
+    }
+
+    function priceValueOf(product) {
+        return parsePrice(productPrice(product));
+    }
+
     function renderCatalog(products) {
         if (!productGrid) return;
 
         const category = normalizeCategory(productGrid.dataset.category);
         const filtered = products.filter((product) => normalizeCategory(product.categorie) === category);
+        catalogFiltersState.products = filtered;
+
         if (!filtered.length) {
+            if (catalogControls?.root) {
+                catalogControls.root.hidden = true;
+            }
             productGrid.innerHTML = `<p class="catalog-empty">Aucun article disponible pour le moment.</p>`;
-            if (status) status.textContent = "0 article";
+            updateCatalogStatus(0, 0);
             return;
         }
 
-        productGrid.innerHTML = filtered.map(catalogCard).join("");
-        if (status) status.textContent = `${filtered.length} article${filtered.length > 1 ? "s" : ""}`;
+        ensureCatalogControls(filtered);
+        renderCatalogGrid();
     }
 
     function renderSelection(products) {
