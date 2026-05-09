@@ -485,11 +485,11 @@
                     ${sizeMarkup(product, "product-detail__size")}
                     <p class="product-detail__description">${product.description || ""}</p>
                     ${priceMarkup(product, "product-detail__price")}
-                    ${productSupportMarkup()}
                     <div class="product-detail__actions">
                         ${cartButtonMarkup(product, "product-detail__cart")}
                         <a href="${categoryPage(product)}" class="button button--small">Retour categorie</a>
                     </div>
+                    ${productSupportMarkup()}
                 </div>
             </article>
         `;

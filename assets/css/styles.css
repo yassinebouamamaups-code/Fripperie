@@ -1089,7 +1089,7 @@ a {
 
 .product-detail__support {
     width: min(100%, 560px);
-    margin: 0 0 24px;
+    margin: 8px 0 0;
     padding: 18px 20px;
     border: 1px solid rgba(200, 155, 79, 0.22);
     background:
