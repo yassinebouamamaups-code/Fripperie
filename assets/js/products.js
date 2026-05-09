@@ -526,11 +526,16 @@
         return `
             <aside class="product-detail__support" aria-label="Aide au choix">
                 <p class="product-detail__support-eyebrow">Besoin d'aide pour choisir ?</p>
-                <p class="product-detail__support-text">Une question sur les mesures, la coupe ou l'etat d'un article ? Ecris-moi sur WhatsApp, retrouve-moi directement sur Instagram, et va jeter un oeil a ${escapeHtml(affordableInstagramLabel)} pour decouvrir d'autres belles pieces a shopper.</p>
+                <p class="product-detail__support-text">Une question sur les mesures, la coupe ou l'etat d'un article ? Ecris-moi sur WhatsApp, retrouve-moi directement sur Instagram.</p>
                 <div class="product-detail__support-actions">
                     ${actions}
                 </div>
             </aside>
+            ${affordableInstagramUrl ? `
+                <aside class="product-help-bubble" aria-label="Service shopping personnalise">
+                    <p>Tu ne trouves pas chaussure a ton pied ? <a href="${escapeAttribute(affordableInstagramUrl)}" target="_blank" rel="noopener">Ecris moi sur Instagram ${escapeHtml(affordableInstagramLabel)}</a> pour un service shopping plus personnalise !</p>
+                </aside>
+            ` : ""}
         `;
     }
 
