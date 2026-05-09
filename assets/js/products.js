@@ -93,7 +93,7 @@
                     description: paymentMethods.stripe?.description || "",
                     checkoutUrl: clean(paymentMethods.stripe?.checkoutUrl),
                     logo: "assets/images/stripe-badge.svg",
-                    secureLabel: paymentMethods.stripe?.secureLabel || "Paiement sÃ©curisÃ© via Stripe",
+                    secureLabel: paymentMethods.stripe?.secureLabel || "Paiement sécurisé via Stripe",
                     supportedMethods: normalizePaymentBadges(paymentMethods.stripe?.supportedMethods, ["CB", "Visa", "Mastercard", "Klarna"])
                 },
                 paypal: {
@@ -103,7 +103,7 @@
                     description: paymentMethods.paypal?.description || "",
                     checkoutUrl: clean(paymentMethods.paypal?.checkoutUrl),
                     logo: "assets/images/paypal-badge.svg",
-                    secureLabel: paymentMethods.paypal?.secureLabel || "Paiement sÃ©curisÃ© via PayPal",
+                    secureLabel: paymentMethods.paypal?.secureLabel || "Paiement sécurisé via PayPal",
                     supportedMethods: normalizePaymentBadges(paymentMethods.paypal?.supportedMethods, [])
                 }
             },
@@ -250,7 +250,7 @@
     }
 
     function isSelected(value) {
-        return ["oui", "yes", "true", "1", "x", "selection", "sÃ©lection"].includes(clean(value).toLowerCase());
+        return ["oui", "yes", "true", "1", "x", "selection", "sélection"].includes(clean(value).toLowerCase());
     }
 
     function parsePrice(value) {
@@ -700,7 +700,7 @@
         }
 
         if (!selected.length) {
-            selectionGrid.innerHTML = `<p class="catalog-empty">La sÃ©lection du moment arrive bientÃ´t.</p>`;
+            selectionGrid.innerHTML = `<p class="catalog-empty">La sélection du moment arrive bientôt.</p>`;
             return;
         }
 
@@ -1332,7 +1332,7 @@
                         data-shipping-option-id="${escapeAttribute(option.id)}"
                         ${pickerUnavailable ? "disabled" : ""}
                     >${escapeHtml(actionLabel)}</button>
-                    ${pickerUnavailable ? `<small>Le sÃ©lecteur Sendcloud n'est pas encore configurÃ©.</small>` : ""}
+                    ${pickerUnavailable ? `<small>Le sélecteur Sendcloud n'est pas encore configuré.</small>` : ""}
                 </span>
             </span>
         `;
@@ -1465,7 +1465,7 @@
 
             const payload = await response.json().catch(() => ({}));
             if (!response.ok || !payload?.promotion) {
-                throw new Error(payload?.error?.message || "Code promo erronÃ©.");
+                throw new Error(payload?.error?.message || "Code promo erroné.");
             }
 
             checkoutPromotionState.promotion = payload.promotion;
@@ -1477,7 +1477,7 @@
             resetStripeCheckoutState();
         } catch (error) {
             checkoutPromotionState.promotion = null;
-            checkoutPromotionState.error = error.message || "Code promo erronÃ©.";
+            checkoutPromotionState.error = error.message || "Code promo erroné.";
         } finally {
             checkoutPromotionState.loading = false;
             renderPromotionFeedback();
@@ -1678,7 +1678,7 @@
             const existing = document.querySelector("script[data-sendcloud-spp]");
             if (existing) {
                 existing.addEventListener("load", () => resolve(window.sendcloud), { once: true });
-                existing.addEventListener("error", () => reject(new Error("Impossible de charger le sÃ©lecteur de points relais Sendcloud.")), { once: true });
+                existing.addEventListener("error", () => reject(new Error("Impossible de charger le sélecteur de points relais Sendcloud.")), { once: true });
                 return;
             }
 
@@ -1687,7 +1687,7 @@
             script.async = true;
             script.dataset.sendcloudSpp = "true";
             script.addEventListener("load", () => resolve(window.sendcloud), { once: true });
-            script.addEventListener("error", () => reject(new Error("Impossible de charger le sÃ©lecteur de points relais Sendcloud.")), { once: true });
+            script.addEventListener("error", () => reject(new Error("Impossible de charger le sélecteur de points relais Sendcloud.")), { once: true });
             document.head.appendChild(script);
         });
 
@@ -1720,7 +1720,7 @@
         }
 
         if (!checkoutShippingState.servicePointPicker.enabled || !checkoutShippingState.servicePointPicker.publicKey) {
-            checkoutElements.feedback.textContent = "Le sÃ©lecteur de points relais Sendcloud n'est pas encore configurÃ©.";
+            checkoutElements.feedback.textContent = "Le sélecteur de points relais Sendcloud n'est pas encore configuré.";
             return;
         }
 
@@ -1730,7 +1730,7 @@
             return;
         }
 
-        checkoutElements.feedback.textContent = "Ouverture du sÃ©lecteur de points relais...";
+        checkoutElements.feedback.textContent = "Ouverture du sélecteur de points relais...";
 
         try {
             await loadSendcloudServicePointSdk();
@@ -1763,7 +1763,7 @@
                             reject(new Error(errors.join(" ")));
                             return;
                         }
-                        reject(new Error("Le sÃ©lecteur de points relais a Ã©tÃ© fermÃ©."));
+                        reject(new Error("Le sélecteur de points relais a été fermé."));
                     }
                 );
             });
@@ -1776,7 +1776,7 @@
                 scheduleStripeAutofillCheck(20);
             }
         } catch (error) {
-            checkoutElements.feedback.textContent = error.message || "Impossible d'ouvrir le sÃ©lecteur de points relais.";
+            checkoutElements.feedback.textContent = error.message || "Impossible d'ouvrir le sélecteur de points relais.";
         }
     }
 
@@ -2205,7 +2205,7 @@
         }
 
         if (checkoutPromotionState.promotion?.code) {
-            checkoutElements.promoFeedback.textContent = `${checkoutPromotionState.promotion.code} appliquÃ© : -${checkoutPromotionState.promotion.percentOff}%`;
+            checkoutElements.promoFeedback.textContent = `${checkoutPromotionState.promotion.code} appliqué : -${checkoutPromotionState.promotion.percentOff}%`;
             return;
         }
 
@@ -2286,7 +2286,7 @@
         if (promoCode && checkoutPromotionState.promotion?.code !== promoCode) {
             await applyPromotionCode();
             if (checkoutPromotionState.promotion?.code !== promoCode) {
-                checkoutElements.feedback.textContent = checkoutPromotionState.error || "Code promo erronÃ©.";
+                checkoutElements.feedback.textContent = checkoutPromotionState.error || "Code promo erroné.";
                 return;
             }
         }
@@ -2633,7 +2633,7 @@
             sendEmailViaEmailJs(shopConfig.emailDelivery.templates.clientSummary, {
                 to_email: order.customer.email,
                 to_name: `${order.customer.firstName} ${order.customer.lastName}`.trim(),
-                subject: `${order.orderNumber} - RÃ©capitulatif de commande`,
+                subject: `${order.orderNumber} - Récapitulatif de commande`,
                 message: summaryText,
                 order_number: order.orderNumber,
                 invoice_number: order.invoiceNumber,
@@ -2670,7 +2670,7 @@
     async function sendSingleEmail(kind, order) {
         if (!order) return;
         if (!hasAutomatedEmailDelivery()) {
-            checkoutElements.successText.textContent = "EmailJS n'est pas encore configurÃ©. Les boutons de renvoi nÃ©cessitent les identifiants dans assets/js/checkout-config.js.";
+            checkoutElements.successText.textContent = "EmailJS n'est pas encore configuré. Les boutons de renvoi nécessitent les identifiants dans assets/js/checkout-config.js.";
             return;
         }
 
@@ -2681,7 +2681,7 @@
                 await sendEmailViaEmailJs(shopConfig.emailDelivery.templates.clientSummary, {
                     to_email: order.customer.email,
                     to_name: `${order.customer.firstName} ${order.customer.lastName}`.trim(),
-                    subject: `${order.orderNumber} - RÃ©capitulatif de commande`,
+                    subject: `${order.orderNumber} - Récapitulatif de commande`,
                     message: buildClientSummaryText(order),
                     order_number: order.orderNumber,
                     invoice_number: order.invoiceNumber,
@@ -2689,7 +2689,7 @@
                     payment_method: order.paymentMethod.label,
                     invoice_html: invoiceHtml
                 });
-                checkoutElements.successText.textContent = "RÃ©capitulatif client renvoyÃ©.";
+                checkoutElements.successText.textContent = "Récapitulatif client renvoyé.";
                 return;
             }
 
@@ -2704,7 +2704,7 @@
                     total_amount: formatPrice(order.totalAmount),
                     invoice_html: invoiceHtml
                 });
-                checkoutElements.successText.textContent = "Facture client renvoyÃ©e.";
+                checkoutElements.successText.textContent = "Facture client renvoyée.";
                 return;
             }
 
@@ -2720,10 +2720,10 @@
                     payment_method: order.paymentMethod.label,
                     invoice_html: invoiceHtml
                 });
-                checkoutElements.successText.textContent = "Facture vendeur renvoyÃ©e.";
+                checkoutElements.successText.textContent = "Facture vendeur renvoyée.";
             }
         } catch (error) {
-            checkoutElements.successText.textContent = "Le renvoi de l'email a Ã©chouÃ©. VÃ©rifiez la configuration EmailJS.";
+            checkoutElements.successText.textContent = "Le renvoi de l'email a échoué. Vérifiez la configuration EmailJS.";
         }
     }
 
@@ -2751,7 +2751,7 @@
             `Bonjour ${order.customer.firstName},`,
             "",
             `Merci pour votre commande chez ${order.seller.brandName}.`,
-            `RÃ©fÃ©rence commande : ${order.orderNumber}`,
+            `Référence commande : ${order.orderNumber}`,
             `Mode de paiement choisi : ${order.paymentMethod.label}`,
             "",
             "Articles :"
@@ -2764,7 +2764,7 @@
         lines.push("");
         lines.push(`Total : ${formatPrice(order.totalAmount)}`);
         lines.push("");
-        lines.push("Votre facture est envoyÃ©e sÃ©parÃ©ment.");
+        lines.push("Votre facture est envoyée séparément.");
         return lines.join("\n");
     }
 
@@ -2776,7 +2776,7 @@
             `Montant total : ${formatPrice(order.totalAmount)}`,
             `Paiement : ${order.paymentMethod.label}`,
             "",
-            "Le dÃ©tail de la facture est inclus dans le template email."
+            "Le détail de la facture est inclus dans le template email."
         ].join("\n");
     }
 
@@ -2791,7 +2791,7 @@
             "",
             `Client : ${order.customer.firstName} ${order.customer.lastName}`,
             `Email : ${order.customer.email}`,
-            `TÃ©lÃ©phone : ${order.customer.phone}`,
+            `Téléphone : ${order.customer.phone}`,
             `Adresse : ${order.customer.addressLine1}, ${order.customer.postalCode} ${order.customer.city}`,
             "",
             "Articles :"
@@ -2860,14 +2860,14 @@
                         <p>${escapeHtml(order.seller.country)}</p>
                     </div>
                     <div>
-                        <p><strong>Facture nÃ‚Â°</strong> ${escapeHtml(order.invoiceNumber)}</p>
+                        <p><strong>Facture n°</strong> ${escapeHtml(order.invoiceNumber)}</p>
                         <p><strong>Commande</strong> ${escapeHtml(order.orderNumber)}</p>
                         <p><strong>Date</strong> ${escapeHtml(order.createdAtLabel)}</p>
                     </div>
                 </header>
                 <section class="document__meta">
                     <div class="document__box">
-                        <h2>FacturÃ© Ã </h2>
+                        <h2>Facturé à</h2>
                         <p>${escapeHtml(`${order.customer.firstName} ${order.customer.lastName}`)}</p>
                         <p>${escapeHtml(order.customer.addressLine1)}</p>
                         <p>${escapeHtml(`${order.customer.postalCode} ${order.customer.city}`)}</p>
@@ -2876,7 +2876,7 @@
                     <div class="document__box">
                         <h2>Informations vendeur</h2>
                         <p>Email : ${escapeHtml(order.seller.email)}</p>
-                        <p>TÃ©lÃ©phone : ${escapeHtml(order.seller.phone)}</p>
+                        <p>Téléphone : ${escapeHtml(order.seller.phone)}</p>
                         ${order.seller.siret ? `<p>SIRET : ${escapeHtml(order.seller.siret)}</p>` : ""}
                         ${order.seller.vatNumber ? `<p>TVA : ${escapeHtml(order.seller.vatNumber)}</p>` : ""}
                     </div>
@@ -2885,8 +2885,8 @@
                     <table>
                         <thead>
                             <tr>
-                                <th>DÃ©signation</th>
-                                <th>QtÃ©</th>
+                                <th>Désignation</th>
+                                <th>Qté</th>
                                 <th>Prix unitaire</th>
                                 <th>Total</th>
                             </tr>
@@ -2899,8 +2899,8 @@
                     </div>
                 </section>
                 <footer class="document__footer">
-                    <p>MÃ©thode de paiement sÃ©lectionnÃ©e : ${escapeHtml(order.paymentMethod.label)}</p>
-                    <p>Facture gÃ©nÃ©rÃ©e automatiquement depuis le panier du site.</p>
+                    <p>Méthode de paiement sélectionnée : ${escapeHtml(order.paymentMethod.label)}</p>
+                    <p>Facture générée automatiquement depuis le panier du site.</p>
                 </footer>
             </main>
             `
@@ -3038,10 +3038,10 @@
                 renderCart();
                 showCheckoutReturnBanner("success", `Commande ${payload.orderNumber || orderNumber} confirm\u00e9e via Stripe.`);
             } else {
-                showCheckoutReturnBanner("success", `La session Stripe ${payload.orderNumber || orderNumber} est revenue avec le statut ${payload.paymentStatus || payload.status}. Le webhook finalisera la commande dÃ¨s confirmation.`);
+                showCheckoutReturnBanner("success", `La session Stripe ${payload.orderNumber || orderNumber} est revenue avec le statut ${payload.paymentStatus || payload.status}. Le webhook finalisera la commande dès confirmation.`);
             }
         } catch (error) {
-            showCheckoutReturnBanner("error", error.message || "La vÃ©rification du paiement Stripe a Ã©chouÃ©.");
+            showCheckoutReturnBanner("error", error.message || "La vérification du paiement Stripe a échoué.");
         } finally {
             cleanupPaymentUrl(url);
         }
