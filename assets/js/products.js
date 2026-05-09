@@ -1037,9 +1037,10 @@
                 throw new Error("Aucun mode de livraison disponible pour cette adresse.");
             }
 
-            const stillExists = checkoutShippingState.options.some((option) => option.id === checkoutShippingState.selectedOptionId);
+            const sortedOptions = getSortedShippingOptions(checkoutShippingState.options);
+            const stillExists = sortedOptions.some((option) => option.id === checkoutShippingState.selectedOptionId);
             if (!stillExists) {
-                checkoutShippingState.selectedOptionId = checkoutShippingState.options[0].id;
+                checkoutShippingState.selectedOptionId = sortedOptions[0].id;
             }
             checkoutShippingState.servicePointSelections = Object.fromEntries(
                 Object.entries(checkoutShippingState.servicePointSelections).filter(([optionId]) => (
@@ -1083,6 +1084,12 @@
         return priorityMap[optionId] ?? 99;
     }
 
+    function getSortedShippingOptions(options = checkoutShippingState.options) {
+        return [...options].sort((left, right) => {
+            return getShippingOptionDisplayOrder(left) - getShippingOptionDisplayOrder(right);
+        });
+    }
+
     function renderShippingOptions() {
         if (!checkoutElements?.shippingOptions || !checkoutElements?.shippingFeedback) {
             return;
@@ -1106,9 +1113,7 @@
             return;
         }
 
-        const options = [...checkoutShippingState.options].sort((left, right) => {
-            return getShippingOptionDisplayOrder(left) - getShippingOptionDisplayOrder(right);
-        });
+        const options = getSortedShippingOptions();
         checkoutElements.shippingFeedback.textContent = "";
         checkoutElements.shippingOptions.innerHTML = options.map((option, index) => `
             <label class="shipping-option">
