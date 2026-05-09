@@ -1,4 +1,4 @@
-window.SHOP_CHECKOUT_CONFIG = {
+﻿window.SHOP_CHECKOUT_CONFIG = {
     backend: {
         baseUrl: "https://la-goutte-de-mer-paiements.onrender.com"
     },
@@ -51,3 +51,4 @@ window.SHOP_CHECKOUT_CONFIG = {
         invoicePrefix: "FAC"
     }
 };
+
