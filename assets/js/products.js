@@ -1301,6 +1301,11 @@
                 </span>
             </label>
         `).join("");
+
+        const selectedOption = getSelectedShippingOption();
+        if (selectedOption?.requiresServicePoint && !getSelectedServicePoint(selectedOption.id)) {
+            checkoutElements.shippingFeedback.textContent = "Choisissez un point relais pour continuer le paiement.";
+        }
     }
 
     function getSelectedShippingOptionId() {
