@@ -402,6 +402,14 @@
         return product.promo || product.prix || "";
     }
 
+    function normalizePromoCode(value) {
+        return clean(value).replace(/\s+/g, "").toUpperCase();
+    }
+
+    function closestFromEventTarget(target, selector) {
+        return target instanceof Element ? target.closest(selector) : null;
+    }
+
     function loadCart() {
         try {
             const saved = localStorage.getItem(CART_STORAGE_KEY);
@@ -734,7 +742,7 @@
 
     function enableGallery() {
         document.addEventListener("click", (event) => {
-            const thumb = event.target.closest("[data-photo]");
+            const thumb = closestFromEventTarget(event.target, "[data-photo]");
             if (!thumb) return;
 
             const card = thumb.closest(".catalog-card, .product-detail-card");
@@ -746,13 +754,13 @@
         });
 
         document.addEventListener("pointerenter", (event) => {
-            const thumb = event.target.closest("[data-photo]");
+            const thumb = closestFromEventTarget(event.target, "[data-photo]");
             if (!thumb) return;
             preloadImageUrl(thumb.dataset.photo);
         }, true);
 
         document.addEventListener("focusin", (event) => {
-            const thumb = event.target.closest("[data-photo]");
+            const thumb = closestFromEventTarget(event.target, "[data-photo]");
             if (!thumb) return;
             preloadImageUrl(thumb.dataset.photo);
         });
@@ -839,7 +847,7 @@
         cartElements.checkoutButton.addEventListener("click", openCheckout);
 
         cartElements.items.addEventListener("click", (event) => {
-            const removeButton = event.target.closest("[data-remove-cart-item]");
+            const removeButton = closestFromEventTarget(event.target, "[data-remove-cart-item]");
             if (!removeButton) return;
             const items = loadCart().filter((item) => item.id !== removeButton.dataset.removeCartItem);
             saveCart(items);
@@ -847,7 +855,7 @@
         });
 
         document.addEventListener("click", (event) => {
-            const addButton = event.target.closest("[data-add-to-cart]");
+            const addButton = closestFromEventTarget(event.target, "[data-add-to-cart]");
             if (!addButton) return;
             if (addButton.disabled || addButton.dataset.unavailable === "true") return;
 
@@ -1362,7 +1370,7 @@
         }
 
         if (event.target instanceof HTMLInputElement && event.target.name === "promoCode") {
-            const nextCode = clean(event.target.value).toUpperCase();
+            const nextCode = normalizePromoCode(event.target.value);
             checkoutPromotionState.code = nextCode;
             if (!nextCode) {
                 checkoutPromotionState.promotion = null;
@@ -1389,7 +1397,7 @@
     }
 
     function handleCheckoutFormClick(event) {
-        const trigger = event.target.closest("[data-open-service-point-picker]");
+        const trigger = closestFromEventTarget(event.target, "[data-open-service-point-picker]");
         if (trigger) {
             event.preventDefault();
             const optionId = clean(trigger.dataset.shippingOptionId);
@@ -1410,7 +1418,7 @@
             return;
         }
 
-        const promoTrigger = event.target.closest("[data-apply-promo]");
+        const promoTrigger = closestFromEventTarget(event.target, "[data-apply-promo]");
         if (promoTrigger) {
             event.preventDefault();
             void applyPromotionCode();
@@ -1431,14 +1439,22 @@
         }
 
         const items = loadCart();
-        const promoCode = clean(checkoutElements.promoInput.value).toUpperCase();
+        const promoCode = normalizePromoCode(checkoutElements.promoInput.value);
         checkoutPromotionState.code = promoCode;
 
         if (!promoCode) {
             checkoutPromotionState.promotion = null;
             checkoutPromotionState.error = "";
+            currentOrder = null;
+            clearPendingPayPalOrder();
+            clearPendingStripeSession();
+            resetStripeCheckoutState();
             renderPromotionFeedback();
             renderCheckoutSummary(items);
+            syncCheckoutPaymentUi();
+            if (getSelectedPaymentMethodId() === "stripe" && hasValidCheckoutCustomerDetails() && isShippingSelectionComplete()) {
+                void maybeAutoInitializeStripe();
+            }
             return;
         }
 
@@ -1469,7 +1485,10 @@
             }
 
             checkoutPromotionState.promotion = payload.promotion;
-            checkoutPromotionState.code = clean(payload.promotion.code).toUpperCase();
+            checkoutPromotionState.code = normalizePromoCode(payload.promotion.code);
+            if (checkoutElements?.promoInput) {
+                checkoutElements.promoInput.value = checkoutPromotionState.code;
+            }
             checkoutPromotionState.error = "";
             currentOrder = null;
             clearPendingPayPalOrder();
@@ -1483,6 +1502,9 @@
             renderPromotionFeedback();
             renderCheckoutSummary(items);
             syncCheckoutPaymentUi();
+            if (!checkoutPromotionState.error && getSelectedPaymentMethodId() === "stripe" && hasValidCheckoutCustomerDetails() && isShippingSelectionComplete()) {
+                void maybeAutoInitializeStripe();
+            }
         }
     }
 
@@ -1618,7 +1640,7 @@
                 id: clean(item.id),
                 price: parsePrice(item.price)
             })),
-            promoCode: clean(checkoutElements?.promoInput?.value).toUpperCase(),
+            promoCode: normalizePromoCode(checkoutElements?.promoInput?.value),
             customer: {
                 firstName: clean(customer.firstName),
                 lastName: clean(customer.lastName),
@@ -2035,6 +2057,7 @@
         const customer = collectCheckoutCustomer();
         const shippingOptionId = getSelectedShippingOptionId();
         const selectedServicePoint = getSelectedServicePoint(shippingOptionId);
+        const promoCode = normalizePromoCode(checkoutElements?.promoInput?.value);
         if (!items.length || !hasCompleteCheckoutCustomer(customer) || !shippingOptionId || !isShippingSelectionComplete()) {
             checkoutElements.stripeNote.textContent = "";
             return;
@@ -2052,7 +2075,7 @@
         syncCheckoutPaymentUi();
 
         try {
-            const remoteSession = await createStripeBackendSession(items, customer, shippingOptionId, selectedServicePoint);
+            const remoteSession = await createStripeBackendSession(items, customer, shippingOptionId, selectedServicePoint, promoCode);
             const pendingSession = {
                 orderNumber: remoteSession.orderNumber,
                 invoiceNumber: remoteSession.invoiceNumber,
@@ -2281,11 +2304,12 @@
             country: "FR",
             customerNote: clean(formData.get("customerNote"))
         };
-        const promoCode = clean(formData.get("promoCode")).toUpperCase();
+        const promoCode = normalizePromoCode(formData.get("promoCode"));
+        const appliedPromoCode = normalizePromoCode(checkoutPromotionState.promotion?.code || checkoutPromotionState.code);
 
-        if (promoCode && checkoutPromotionState.promotion?.code !== promoCode) {
+        if (promoCode && appliedPromoCode !== promoCode) {
             await applyPromotionCode();
-            if (checkoutPromotionState.promotion?.code !== promoCode) {
+            if (normalizePromoCode(checkoutPromotionState.promotion?.code || checkoutPromotionState.code) !== promoCode) {
                 checkoutElements.feedback.textContent = checkoutPromotionState.error || "Code promo erroné.";
                 return;
             }
