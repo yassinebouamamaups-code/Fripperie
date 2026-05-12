@@ -253,10 +253,10 @@ function defaultSendcloudShippingOptions() {
       }
     },
     {
-      id: "dhl-express-europe",
-      label: "DHL Express Europe",
+      id: "fedex-europe",
+      label: "FedEx Europe",
       type: "home",
-      carrier: "DHL Express",
+      carrier: "FedEx",
       description: "Livraison express premium en Europe.",
       price: 26.9,
       freeAboveOrderAmount: null,
@@ -264,8 +264,8 @@ function defaultSendcloudShippingOptions() {
       estimatedDaysMax: 3,
       region: "EU",
       matcher: {
-        carrier: "dhl",
-        nameIncludes: "express"
+        carrier: "fedex",
+        nameIncludes: "international"
       }
     },
     {
@@ -285,10 +285,10 @@ function defaultSendcloudShippingOptions() {
       }
     },
     {
-      id: "dhl-express-world",
-      label: "DHL Express International",
+      id: "fedex-international",
+      label: "FedEx International",
       type: "home",
-      carrier: "DHL Express",
+      carrier: "FedEx",
       description: "Livraison express internationale avec suivi detaille.",
       price: 39.9,
       freeAboveOrderAmount: null,
@@ -296,8 +296,8 @@ function defaultSendcloudShippingOptions() {
       estimatedDaysMax: 5,
       region: "WORLD",
       matcher: {
-        carrier: "dhl",
-        nameIncludes: "express"
+        carrier: "fedex",
+        nameIncludes: "international"
       }
     }
   ];

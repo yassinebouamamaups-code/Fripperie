@@ -2002,6 +2002,67 @@ a {
     font-size: 14px;
 }
 
+.shipping-international {
+    border: 1px solid rgba(200, 155, 79, 0.14);
+    background: rgba(6, 19, 32, 0.48);
+}
+
+.shipping-international__summary {
+    list-style: none;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 13px 16px;
+    color: var(--gold-soft);
+    font-family: "Cinzel", Georgia, serif;
+    font-size: 14px;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+}
+
+.shipping-international__summary::-webkit-details-marker {
+    display: none;
+}
+
+.shipping-international__summary::after {
+    content: "+";
+    color: var(--gold);
+    font-size: 18px;
+    line-height: 1;
+}
+
+.shipping-international[open] .shipping-international__summary::after {
+    content: "-";
+}
+
+.shipping-international__body {
+    display: grid;
+    gap: 12px;
+    padding: 0 16px 16px;
+    border-top: 1px solid rgba(200, 155, 79, 0.1);
+}
+
+.shipping-international__text {
+    margin: 0;
+    color: rgba(246, 239, 228, 0.78);
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.shipping-international__field {
+    display: grid;
+    gap: 8px;
+}
+
+.shipping-international__field span {
+    color: var(--text);
+    font-family: "Cinzel", Georgia, serif;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
 .shipping-option {
     display: block;
     cursor: pointer;

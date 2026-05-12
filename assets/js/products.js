@@ -930,25 +930,6 @@
                             <span>Ville</span>
                             <input type="text" name="city" required>
                         </label>
-                        <label>
-                            <span>Pays</span>
-                            <select name="country" required>
-                                <option value="FR" selected>France</option>
-                                <option value="BE">Belgique</option>
-                                <option value="DE">Allemagne</option>
-                                <option value="ES">Espagne</option>
-                                <option value="IT">Italie</option>
-                                <option value="NL">Pays-Bas</option>
-                                <option value="LU">Luxembourg</option>
-                                <option value="PT">Portugal</option>
-                                <option value="IE">Irlande</option>
-                                <option value="AT">Autriche</option>
-                                <option value="CH">Suisse</option>
-                                <option value="GB">Royaume-Uni</option>
-                                <option value="US">Etats-Unis</option>
-                                <option value="CA">Canada</option>
-                            </select>
-                        </label>
                         <label class="checkout-form__full">
                             <span>Message vendeur</span>
                             <textarea name="customerNote" rows="3" placeholder="Pr&eacute;cision de livraison, demande particuli&egrave;re, cr&eacute;neau..."></textarea>
@@ -959,6 +940,31 @@
                             <h3>Mode de livraison</h3>
                             <div class="checkout-shipping__list" data-shipping-options></div>
                             <p class="checkout-shipping__feedback" data-shipping-feedback></p>
+                            <details class="shipping-international" data-shipping-international-disclosure>
+                                <summary class="shipping-international__summary">Livraison hors France</summary>
+                                <div class="shipping-international__body">
+                                    <p class="shipping-international__text">Choisissez un pays de destination pour afficher les modes de livraison internationaux.</p>
+                                    <label class="shipping-international__field">
+                                        <span>Pays de livraison</span>
+                                        <select name="country" required>
+                                            <option value="FR" selected>France</option>
+                                            <option value="BE">Belgique</option>
+                                            <option value="DE">Allemagne</option>
+                                            <option value="ES">Espagne</option>
+                                            <option value="IT">Italie</option>
+                                            <option value="NL">Pays-Bas</option>
+                                            <option value="LU">Luxembourg</option>
+                                            <option value="PT">Portugal</option>
+                                            <option value="IE">Irlande</option>
+                                            <option value="AT">Autriche</option>
+                                            <option value="CH">Suisse</option>
+                                            <option value="GB">Royaume-Uni</option>
+                                            <option value="US">Etats-Unis</option>
+                                            <option value="CA">Canada</option>
+                                        </select>
+                                    </label>
+                                </div>
+                            </details>
                         </div>
                         <h3>Mode de paiement</h3>
                         <div class="checkout-methods__list" data-payment-methods></div>
@@ -1029,6 +1035,7 @@
             shippingSection: panel.querySelector("[data-checkout-shipping]"),
             shippingOptions: panel.querySelector("[data-shipping-options]"),
             shippingFeedback: panel.querySelector("[data-shipping-feedback]"),
+            shippingInternationalDisclosure: panel.querySelector("[data-shipping-international-disclosure]"),
             paymentMethods: panel.querySelector("[data-payment-methods]"),
             stripeSection: panel.querySelector("[data-checkout-stripe]"),
             stripeMount: panel.querySelector("[data-stripe-payment-element]"),
@@ -1286,6 +1293,8 @@
             return;
         }
 
+        syncInternationalShippingDisclosure();
+
         if (checkoutElements.submitButton) {
             const isSubmitBlocked = checkoutShippingState.loading || Boolean(checkoutShippingState.error) || !checkoutShippingState.options.length;
             checkoutElements.submitButton.disabled = isSubmitBlocked;
@@ -1324,6 +1333,23 @@
         const selectedOption = getSelectedShippingOption();
         if (selectedOption?.requiresServicePoint && !getSelectedServicePoint(selectedOption.id)) {
             checkoutElements.shippingFeedback.textContent = "Choisissez un point relais pour continuer le paiement.";
+        }
+    }
+
+    function syncInternationalShippingDisclosure() {
+        const disclosure = checkoutElements?.shippingInternationalDisclosure;
+        const country = collectCheckoutCustomer(false).country || "FR";
+        if (!disclosure) {
+            return;
+        }
+
+        if (country !== "FR") {
+            disclosure.open = true;
+            return;
+        }
+
+        if (!disclosure.dataset.userOpened) {
+            disclosure.open = false;
         }
     }
 
@@ -1408,8 +1434,15 @@
             return;
         }
 
+        if (event.target instanceof HTMLSelectElement && event.target.name === "country") {
+            const disclosure = checkoutElements?.shippingInternationalDisclosure;
+            if (disclosure) {
+                disclosure.dataset.userOpened = event.target.value === "FR" ? "" : "true";
+            }
+        }
+
         if (
-            (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement)
+            (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement || event.target instanceof HTMLSelectElement)
             && !(event.target instanceof HTMLInputElement && event.target.name === "paymentMethod")
         ) {
             scheduleCheckoutShippingRefresh();
@@ -1421,6 +1454,11 @@
     }
 
     function handleCheckoutFormClick(event) {
+        const disclosureTrigger = closestFromEventTarget(event.target, ".shipping-international__summary");
+        if (disclosureTrigger && checkoutElements?.shippingInternationalDisclosure) {
+            checkoutElements.shippingInternationalDisclosure.dataset.userOpened = "true";
+        }
+
         const trigger = closestFromEventTarget(event.target, "[data-open-service-point-picker]");
         if (trigger) {
             event.preventDefault();
