@@ -34,6 +34,7 @@
     let stripeCheckoutMode = "custom";
     let sendcloudServicePointSdkPromise = null;
     let checkoutShippingState = {
+        country: "FR",
         options: [],
         selectedOptionId: "",
         servicePointPicker: {
@@ -1145,6 +1146,7 @@
         window.clearTimeout(checkoutShippingUpdateTimer);
         checkoutShippingUpdateTimer = 0;
         checkoutShippingState = {
+            country: "FR",
             options: [],
             selectedOptionId: "",
             servicePointPicker: {
@@ -1188,7 +1190,17 @@
         if (!items.length) return;
 
         const customer = collectCheckoutCustomer(false);
+        const normalizedCountry = clean(customer.country || "FR").toUpperCase();
+        const countryChanged = normalizedCountry !== checkoutShippingState.country;
         const requestId = ++checkoutShippingRequestId;
+        if (countryChanged) {
+            checkoutShippingState.country = normalizedCountry;
+            checkoutShippingState.options = [];
+            checkoutShippingState.selectedOptionId = "";
+            checkoutShippingState.servicePointSelections = {};
+            checkoutShippingState.error = "";
+            checkoutElements.feedback.textContent = "";
+        }
         checkoutShippingState.loading = true;
         checkoutShippingState.error = "";
         renderShippingOptions();
@@ -1225,7 +1237,9 @@
                 publicKey: clean(payload?.servicePointPicker?.publicKey)
             };
             if (!checkoutShippingState.options.length) {
-                throw new Error("Aucun mode de livraison disponible pour cette adresse.");
+                throw new Error(normalizedCountry === "FR"
+                    ? "Aucun mode de livraison disponible pour cette adresse."
+                    : "Aucun mode de livraison international n'est disponible pour ce pays pour le moment.");
             }
 
             const sortedOptions = getSortedShippingOptions(checkoutShippingState.options);
@@ -1247,6 +1261,7 @@
             }
             checkoutShippingState.options = [];
             checkoutShippingState.selectedOptionId = "";
+            checkoutShippingState.servicePointSelections = {};
             checkoutShippingState.error = error.message || "Impossible de charger les modes de livraison.";
         } finally {
             if (requestId !== checkoutShippingRequestId) {
@@ -1292,9 +1307,8 @@
         }
 
         if (checkoutShippingState.loading) {
-            checkoutElements.shippingFeedback.textContent = checkoutShippingState.options.length
-                ? ""
-                : "Chargement des modes de livraison...";
+            checkoutElements.shippingOptions.innerHTML = "";
+            checkoutElements.shippingFeedback.textContent = "Chargement des modes de livraison...";
             return;
         }
 
