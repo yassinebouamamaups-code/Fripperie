@@ -211,7 +211,7 @@ function defaultSendcloudShippingOptions() {
       carrier: "Chronopost",
       description: "Livraison rapide a domicile avec suivi.",
       price: 8.9,
-      freeAboveOrderAmount: null,
+      freeAboveOrderAmount: 50,
       estimatedDaysMin: 1,
       estimatedDaysMax: 2,
       country: "FR",
