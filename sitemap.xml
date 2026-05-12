@@ -1,22 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-
   <url>
     <loc>https://lagouttedemershop.fr/</loc>
+    <changefreq>weekly</changefreq>
   </url>
-
   <url>
     <loc>https://lagouttedemershop.fr/hommes.html</loc>
+    <changefreq>weekly</changefreq>
   </url>
-
   <url>
     <loc>https://lagouttedemershop.fr/femmes.html</loc>
+    <changefreq>weekly</changefreq>
   </url>
-
   <url>
     <loc>https://lagouttedemershop.fr/accessoires.html</loc>
-  </url>
-  <url>
-    <loc>https://lagouttedemershop.fr/articles.html</loc>
+    <changefreq>weekly</changefreq>
   </url>
 </urlset>
