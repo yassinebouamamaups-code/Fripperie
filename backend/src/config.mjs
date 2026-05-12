@@ -219,6 +219,86 @@ function defaultSendcloudShippingOptions() {
         carrier: "chronopost",
         nameIncludes: ""
       }
+    },
+    {
+      id: "colissimo-international",
+      label: "Colissimo International",
+      type: "home",
+      carrier: "Colissimo",
+      description: "Livraison internationale suivie a domicile.",
+      price: 12.9,
+      freeAboveOrderAmount: null,
+      estimatedDaysMin: 3,
+      estimatedDaysMax: 6,
+      region: "EU",
+      matcher: {
+        carrier: "colissimo",
+        nameIncludes: "international"
+      }
+    },
+    {
+      id: "chronopost-europe",
+      label: "Chronopost Europe",
+      type: "home",
+      carrier: "Chronopost",
+      description: "Livraison express en Europe avec suivi.",
+      price: 18.9,
+      freeAboveOrderAmount: null,
+      estimatedDaysMin: 2,
+      estimatedDaysMax: 4,
+      region: "EU",
+      matcher: {
+        carrier: "chronopost",
+        nameIncludes: "europe"
+      }
+    },
+    {
+      id: "dhl-express-europe",
+      label: "DHL Express Europe",
+      type: "home",
+      carrier: "DHL Express",
+      description: "Livraison express premium en Europe.",
+      price: 26.9,
+      freeAboveOrderAmount: null,
+      estimatedDaysMin: 1,
+      estimatedDaysMax: 3,
+      region: "EU",
+      matcher: {
+        carrier: "dhl",
+        nameIncludes: "express"
+      }
+    },
+    {
+      id: "colissimo-international-world",
+      label: "Colissimo International",
+      type: "home",
+      carrier: "Colissimo",
+      description: "Livraison internationale suivie hors Europe.",
+      price: 24.9,
+      freeAboveOrderAmount: null,
+      estimatedDaysMin: 5,
+      estimatedDaysMax: 10,
+      region: "WORLD",
+      matcher: {
+        carrier: "colissimo",
+        nameIncludes: "international"
+      }
+    },
+    {
+      id: "dhl-express-world",
+      label: "DHL Express International",
+      type: "home",
+      carrier: "DHL Express",
+      description: "Livraison express internationale avec suivi detaille.",
+      price: 39.9,
+      freeAboveOrderAmount: null,
+      estimatedDaysMin: 2,
+      estimatedDaysMax: 5,
+      region: "WORLD",
+      matcher: {
+        carrier: "dhl",
+        nameIncludes: "express"
+      }
     }
   ];
 }

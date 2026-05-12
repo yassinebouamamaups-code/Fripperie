@@ -6,6 +6,11 @@ const SENDCLOUD_API_V2_BASE = "https://panel.sendcloud.sc/api/v2";
 const SENDCLOUD_API_V3_BASE = "https://panel.sendcloud.sc/api/v3";
 const shippingMethodsCache = new Map();
 let senderAddressCache = null;
+const EU_COUNTRY_CODES = new Set([
+  "AT", "BE", "BG", "HR", "CY", "CZ", "DE", "DK", "EE", "ES", "FI", "GR",
+  "HU", "IE", "IT", "LT", "LU", "LV", "MT", "NL", "PL", "PT", "RO", "SE",
+  "SI", "SK"
+]);
 
 export function isSendcloudEnabled() {
   return Boolean(config.sendcloud.publicKey && config.sendcloud.secretKey);
@@ -22,7 +27,7 @@ export function listConfiguredShippingOptions({ orderAmount = 0, country = "", i
   const normalizedCountry = normalizeCountryCode(country || config.shipping.defaultCountry);
 
   return normalizeShippingOptionsConfig()
-    .filter((option) => !option.country || option.country === normalizedCountry)
+    .filter((option) => optionAppliesToCountry(option, normalizedCountry))
     .map((option) => buildCheckoutShippingOption(option, orderAmount, items));
 }
 
@@ -498,7 +503,10 @@ function normalizeShippingOptionsConfig() {
       : parseNumber(entry?.freeAboveOrderAmount, null),
     estimatedDaysMin: parseInteger(entry?.estimatedDaysMin, null),
     estimatedDaysMax: parseInteger(entry?.estimatedDaysMax, null),
-    country: normalizeCountryCode(entry?.country || config.shipping.defaultCountry),
+    country: entry?.country == null || clean(entry?.country) === ""
+      ? ""
+      : normalizeCountryCode(entry?.country),
+    region: normalizeShippingRegion(entry?.region),
     pickerCarriers: normalizePickerCarriers(entry?.pickerCarriers ?? entry?.pickerCarrierCodes),
     matcher: {
       carrier: clean(entry?.matcher?.carrier).toLowerCase(),
@@ -619,6 +627,21 @@ function isInternationalShippingMethod(method) {
   return shippingMethodContainsKeyword(method, "international");
 }
 
+function optionAppliesToCountry(option, countryCode) {
+  const normalizedCountry = normalizeCountryCode(countryCode || config.shipping.defaultCountry);
+  const normalizedRegion = normalizeShippingRegion(option?.region);
+
+  if (normalizedRegion === "EU") {
+    return isEuropeanDestination(normalizedCountry);
+  }
+
+  if (normalizedRegion === "WORLD") {
+    return isNonEuropeanInternationalDestination(normalizedCountry);
+  }
+
+  return !option.country || option.country === normalizedCountry;
+}
+
 function getOrderPackageWeightKg(order) {
   return parseNumber(
     order?.shipping?.package?.weightKg
@@ -657,9 +680,18 @@ function scoreShippingMethod(method, option, order) {
   const packageWeightKg = getOrderPackageWeightKg(order);
   const optionType = clean(option?.type).toLowerCase();
   const servicePointInput = clean(method?.service_point_input).toLowerCase();
+  const optionRegion = normalizeShippingRegion(option?.region);
 
   if (normalizedCountry === "FR" && !isInternationalShippingMethod(method)) {
     score += 40;
+  }
+
+  if (optionRegion === "EU" && shippingMethodContainsKeyword(method, "europe")) {
+    score += 30;
+  }
+
+  if (optionRegion === "WORLD" && isInternationalShippingMethod(method)) {
+    score += 30;
   }
 
   if (packageWeightKg > 0 && shippingMethodSupportsWeight(method, packageWeightKg)) {
@@ -699,6 +731,21 @@ function buildEstimatedLabel(minDays, maxDays) {
 
 function normalizeCountryCode(value) {
   return clean(value).toUpperCase() || "FR";
+}
+
+function normalizeShippingRegion(value) {
+  const normalized = clean(value).toUpperCase();
+  return ["EU", "WORLD"].includes(normalized) ? normalized : "";
+}
+
+function isEuropeanDestination(countryCode) {
+  const normalizedCountry = normalizeCountryCode(countryCode);
+  return normalizedCountry !== "FR" && EU_COUNTRY_CODES.has(normalizedCountry);
+}
+
+function isNonEuropeanInternationalDestination(countryCode) {
+  const normalizedCountry = normalizeCountryCode(countryCode);
+  return normalizedCountry !== "FR" && !EU_COUNTRY_CODES.has(normalizedCountry);
 }
 
 function parseNumber(value, fallback) {

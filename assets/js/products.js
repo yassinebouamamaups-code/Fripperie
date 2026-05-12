@@ -930,6 +930,25 @@
                             <span>Ville</span>
                             <input type="text" name="city" required>
                         </label>
+                        <label>
+                            <span>Pays</span>
+                            <select name="country" required>
+                                <option value="FR" selected>France</option>
+                                <option value="BE">Belgique</option>
+                                <option value="DE">Allemagne</option>
+                                <option value="ES">Espagne</option>
+                                <option value="IT">Italie</option>
+                                <option value="NL">Pays-Bas</option>
+                                <option value="LU">Luxembourg</option>
+                                <option value="PT">Portugal</option>
+                                <option value="IE">Irlande</option>
+                                <option value="AT">Autriche</option>
+                                <option value="CH">Suisse</option>
+                                <option value="GB">Royaume-Uni</option>
+                                <option value="US">Etats-Unis</option>
+                                <option value="CA">Canada</option>
+                            </select>
+                        </label>
                         <label class="checkout-form__full">
                             <span>Message vendeur</span>
                             <textarea name="customerNote" rows="3" placeholder="Pr&eacute;cision de livraison, demande particuli&egrave;re, cr&eacute;neau..."></textarea>
@@ -1653,7 +1672,8 @@
                 phone: clean(customer.phone),
                 addressLine1: clean(customer.addressLine1),
                 postalCode: clean(customer.postalCode),
-                city: clean(customer.city)
+                city: clean(customer.city),
+                country: clean(customer.country)
             },
             shippingOptionId: getSelectedShippingOptionId()
         });
@@ -1683,7 +1703,7 @@
             addressLine1: clean(formData.get("addressLine1")),
             postalCode: clean(formData.get("postalCode")),
             city: clean(formData.get("city")),
-            country: "FR",
+            country: clean(formData.get("country")).toUpperCase() || "FR",
             customerNote: includeNote ? clean(formData.get("customerNote")) : ""
         };
     }
@@ -2306,7 +2326,7 @@
             addressLine1: clean(formData.get("addressLine1")),
             postalCode: clean(formData.get("postalCode")),
             city: clean(formData.get("city")),
-            country: "FR",
+            country: clean(formData.get("country")).toUpperCase() || "FR",
             customerNote: clean(formData.get("customerNote"))
         };
         const promoCode = normalizePromoCode(formData.get("promoCode"));

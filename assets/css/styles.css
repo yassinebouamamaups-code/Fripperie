@@ -1888,6 +1888,7 @@ a {
 }
 
 .checkout-form input,
+.checkout-form select,
 .checkout-form textarea {
     width: 100%;
     box-sizing: border-box;
