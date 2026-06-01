@@ -624,7 +624,7 @@
         return `
             <aside class="product-detail__support" aria-label="Aide au choix">
                 <p class="product-detail__support-eyebrow">Besoin d'aide pour choisir ?</p>
-                <p class="product-detail__support-text">Une question sur les mesures, la coupe ou l'etat d'un article ? Ecris-moi sur WhatsApp, retrouve-moi directement sur Instagram.</p>
+                <p class="product-detail__support-text">Une question sur les mesures ou la coupe ? Ecris-moi sur WhatsApp, retrouve-moi directement sur Instagram.</p>
                 ${affordableSupport}
                 <div class="product-detail__support-actions">
                     ${actions}
