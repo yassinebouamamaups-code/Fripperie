@@ -872,7 +872,7 @@ a {
 
 .catalog-card__image {
     width: 100%;
-    aspect-ratio: 1 / 1.08;
+    aspect-ratio: 4 / 5;
     object-fit: cover;
     filter: brightness(0.74) saturate(0.84) contrast(1.06);
 }
@@ -1019,7 +1019,7 @@ a {
 
 .product-detail__image {
     width: 100%;
-    aspect-ratio: 1 / 1.08;
+    aspect-ratio: 4 / 5;
     object-fit: cover;
     background: #050b10;
     filter: brightness(0.78) saturate(0.88) contrast(1.04);
