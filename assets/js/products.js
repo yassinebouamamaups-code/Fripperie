@@ -245,6 +245,8 @@
                 headers.forEach((header, index) => {
                     item[header] = (cells[index] || "").trim();
                 });
+                item.prix = normalizeCatalogPriceDisplay(item.prix);
+                item.promo = normalizeCatalogPriceDisplay(item.promo);
                 return item;
             })
             .filter((item) => item.id || item.categorie || item.nom || item.prix || item.promo || item.description || item.photos || item.statut);
@@ -270,6 +272,22 @@
             style: "currency",
             currency: "EUR"
         });
+    }
+
+    function normalizeCatalogPriceDisplay(value) {
+        const raw = clean(value);
+        if (!raw) return "";
+
+        const parsed = parsePrice(raw);
+        if (!Number.isFinite(parsed)) {
+            return raw;
+        }
+
+        if (!/[\d]/.test(raw)) {
+            return raw;
+        }
+
+        return `${parsed.toFixed(2).replace(".", ",")}€`;
     }
 
     function loadCachedCatalogText() {
