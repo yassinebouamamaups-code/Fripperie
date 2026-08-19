@@ -1,6 +1,7 @@
 import http from "node:http";
 import { URL } from "node:url";
 import { config } from "./config.mjs";
+import { appendCatalogItem, getAdminCatalogState, getCatalogUploadAsset, getPublicCatalogCsvUrl, readCatalogCsvText, requireAdminAccess, saveCatalogImage } from "./lib/admin-catalog.mjs";
 import { loadCatalog } from "./lib/catalog.mjs";
 import { getUnavailableProductIds } from "./lib/inventory.mjs";
 import { capturePayPalOrder, createPayPalOrder, verifyWebhook } from "./lib/paypal.mjs";
@@ -8,7 +9,7 @@ import { getActivePromotionBanner, validatePromotionCode } from "./lib/promotion
 import { fetchShipmentLabelAsset, getServicePointPickerConfig, listConfiguredShippingOptions } from "./lib/sendcloud.mjs";
 import { createStripeCheckoutSession, retrieveStripeCheckoutSession, verifyStripeWebhookSignature } from "./lib/stripe.mjs";
 import { attachPayPalOrder, attachStripeSession, buildDraftOrder, getOrder, getOrderByPayPalOrderId, getOrderByStripeSessionId, markOrderPaidFromCapture, markOrderPaidFromStripeSession, updateOrderShippingFromWebhook } from "./lib/order-service.mjs";
-import { handleError, noContent, readJsonBody, readRawBody, sendJson, redirect } from "./lib/http.mjs";
+import { handleError, noContent, readBinaryBody, readJsonBody, readRawBody, sendBuffer, sendJson, sendText, redirect } from "./lib/http.mjs";
 
 const server = http.createServer(async (request, response) => {
   try {
@@ -51,6 +52,83 @@ const server = http.createServer(async (request, response) => {
       sendJson(response, 200, {
         ok: true,
         unavailableIds: getUnavailableProductIds(catalog)
+      });
+      return;
+    }
+
+    if (request.method === "GET" && url.pathname === "/api/catalog/source.csv") {
+      const localCsv = readCatalogCsvText();
+      if (localCsv) {
+        sendText(response, 200, localCsv, {
+          "Content-Type": "text/csv; charset=utf-8"
+        });
+        return;
+      }
+
+      const remoteResponse = await fetch(config.catalogSourceUrl);
+      if (!remoteResponse.ok) {
+        sendJson(response, 502, { error: "Impossible de charger le catalogue source." });
+        return;
+      }
+
+      const remoteCsv = await remoteResponse.text();
+      sendText(response, 200, remoteCsv, {
+        "Content-Type": "text/csv; charset=utf-8"
+      });
+      return;
+    }
+
+    if (request.method === "GET" && url.pathname.startsWith("/media/catalog/")) {
+      const fileName = decodeURIComponent(url.pathname.split("/").pop() || "");
+      const asset = getCatalogUploadAsset(fileName);
+      sendBuffer(response, 200, asset.buffer, {
+        "Content-Type": asset.contentType,
+        "Cache-Control": "public, max-age=31536000, immutable"
+      });
+      return;
+    }
+
+    if (request.method === "GET" && url.pathname === "/api/admin/catalog") {
+      requireAdminAccess(request);
+      const state = getAdminCatalogState();
+      sendJson(response, 200, state);
+      return;
+    }
+
+    if (request.method === "POST" && url.pathname === "/api/admin/catalog/items") {
+      requireAdminAccess(request);
+      const payload = await readJsonBody(request);
+      const item = appendCatalogItem(payload);
+      sendJson(response, 201, {
+        ok: true,
+        item
+      });
+      return;
+    }
+
+    if (request.method === "POST" && url.pathname === "/api/admin/catalog/upload-image") {
+      requireAdminAccess(request);
+      const body = await readBinaryBody(request);
+      const fileName = decodeURIComponent(String(request.headers["x-file-name"] || "photo"));
+      const contentType = String(request.headers["content-type"] || "application/octet-stream");
+      const savedImage = saveCatalogImage({
+        fileName,
+        contentType,
+        buffer: body
+      });
+
+      sendJson(response, 201, {
+        ok: true,
+        ...savedImage
+      });
+      return;
+    }
+
+    if (request.method === "POST" && url.pathname === "/api/admin/session") {
+      requireAdminAccess(request);
+      sendJson(response, 200, {
+        ok: true,
+        catalogUrl: getPublicCatalogCsvUrl()
       });
       return;
     }

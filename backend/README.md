@@ -36,11 +36,35 @@ Copier `backend/.env.example` vers `backend/.env` et renseigner au minimum :
 - `APP_BASE_URL`
 - `SELLER_EMAIL`
 - `CATALOG_SOURCE_URL`
+- `ADMIN_PASSWORD`
 
 Pour les emails :
 
 - `EMAIL_MODE=log` : aucun envoi reel, les emails sont journalises
 - `EMAIL_PROVIDER=resend` : envoi reel via l'API Resend si `RESEND_API_KEY` est defini
+
+## Catalogue admin et publication
+
+Le mode admin final repose sur 3 routes :
+
+- `GET /api/catalog/source.csv` : source publique du catalogue pour le front
+- `POST /api/admin/session` : verification du mot de passe admin
+- `GET/POST /api/admin/catalog*` : lecture, ajout d'articles et upload d'images
+
+Configuration minimale recommandee :
+
+```bash
+CATALOG_SOURCE_URL=https://docs.google.com/spreadsheets/d/1yZVWg-Ypzd2VtFE4tVf0XmVVvTqzgFu8TTq4KAyvsb0/export?format=csv&gid=1348794459
+CATALOG_WRITE_FILE=../assets/data/products.csv
+ADMIN_PASSWORD=change_me_admin_password
+```
+
+Dans cette configuration :
+
+- le front public peut lire `https://.../api/catalog/source.csv`
+- l'admin ajoute les articles dans le CSV local configure
+- si ce CSV existe, il devient la source prioritaire du catalogue public
+- les images uploades sont servies par le backend via `/media/catalog/:fileName`
 
 ## Mise a jour automatique du stock CSV
 

@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Administration catalogue - La Goutte de Mer Shop</title>
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600&family=Montserrat:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="assets/css/styles.css?v=14">
+</head>
+<body class="admin-body">
+    <main class="admin-shell">
+        <section class="admin-hero">
+            <p class="admin-kicker">Espace client</p>
+            <h1>Publier un article depuis un lien simple et sécurisé</h1>
+            <p>Cette page devient votre point d’entrée client. Une fois connecte, l’article ajoute ici est publie dans le catalogue servi par le backend.</p>
+            <div class="admin-badges">
+                <span class="admin-badge" data-admin-backend>Chargement backend...</span>
+                <span class="admin-badge" data-admin-writable data-state="pending">Verification ecriture...</span>
+            </div>
+            <p class="admin-source">Source publique actuelle : <span data-admin-source>Chargement...</span></p>
+        </section>
+
+        <section class="admin-login-panel admin-panel" data-admin-login>
+            <div class="section-heading section-heading--admin">
+                <span></span>
+                <h2>Connexion admin</h2>
+                <span></span>
+            </div>
+            <form class="admin-login-form" data-admin-login-form>
+                <label>
+                    <span>Mot de passe</span>
+                    <input type="password" data-admin-password placeholder="Mot de passe administrateur" autocomplete="current-password">
+                </label>
+                <button type="submit" class="button button--hero">Entrer dans l'espace admin</button>
+            </form>
+        </section>
+
+        <section class="admin-layout" data-admin-app hidden>
+            <section class="admin-panel">
+                <div class="section-heading section-heading--admin">
+                    <span></span>
+                    <h2>Nouvel article</h2>
+                    <span></span>
+                </div>
+
+                <form class="admin-form" data-admin-form>
+                    <div class="admin-grid">
+                        <label>
+                            <span>ID optionnel</span>
+                            <input type="text" name="id" placeholder="auto-généré si vide">
+                        </label>
+
+                        <label>
+                            <span>Catégorie</span>
+                            <select name="categorie" required>
+                                <option value="">Choisir</option>
+                                <option value="hommes">Hommes</option>
+                                <option value="femmes">Femmes</option>
+                                <option value="accessoires">Accessoires</option>
+                            </select>
+                        </label>
+
+                        <label class="admin-grid__wide">
+                            <span>Nom de l'article</span>
+                            <input type="text" name="nom" placeholder="Ex. Veste en cuir vintage" required>
+                        </label>
+
+                        <label>
+                            <span>Taille</span>
+                            <input type="text" name="taille" list="catalog-sizes" placeholder="Ex. M">
+                        </label>
+
+                        <label>
+                            <span>Prix</span>
+                            <input type="text" name="prix" placeholder="Ex. 49,90" required>
+                        </label>
+
+                        <label>
+                            <span>Prix promo</span>
+                            <input type="text" name="promo" placeholder="Ex. 39,90">
+                        </label>
+
+                        <label>
+                            <span>Statut</span>
+                            <select name="statut">
+                                <option value="disponible">Disponible</option>
+                                <option value="indisponible">Indisponible</option>
+                            </select>
+                        </label>
+
+                        <label class="admin-toggle">
+                            <input type="checkbox" name="selection_moment" value="oui">
+                            <span>Ajouter à la sélection du moment</span>
+                        </label>
+
+                        <label class="admin-grid__wide">
+                            <span>Description</span>
+                            <textarea name="description" rows="6" placeholder="Décrivez la pièce, l'état, la coupe, les détails..."></textarea>
+                        </label>
+
+                        <label class="admin-grid__wide">
+                            <span>Photos à téléverser</span>
+                            <input type="file" data-admin-photo-files accept="image/png,image/jpeg,image/webp,image/gif" multiple>
+                            <small>Les images sont stockees par le backend et restent accessibles publiquement pour la boutique.</small>
+                        </label>
+
+                        <input type="hidden" name="uploaded_photos" data-admin-uploaded-photos>
+
+                        <label class="admin-grid__wide">
+                            <span>Photos par URL (optionnel)</span>
+                            <textarea name="remote_photos" rows="4" placeholder="Une URL par ligne si vous préférez utiliser des images déjà hébergées"></textarea>
+                        </label>
+                    </div>
+
+                    <datalist id="catalog-sizes">
+                        <option value="XS"></option>
+                        <option value="S"></option>
+                        <option value="M"></option>
+                        <option value="L"></option>
+                        <option value="XL"></option>
+                        <option value="36"></option>
+                        <option value="38"></option>
+                        <option value="40"></option>
+                        <option value="42"></option>
+                        <option value="Taille unique"></option>
+                    </datalist>
+
+                    <div class="admin-actions">
+                        <button type="submit" class="button button--hero">Publier l'article</button>
+                        <button type="button" class="button button--small" data-admin-logout>Se deconnecter</button>
+                        <p class="admin-status" data-admin-status data-state="pending">Le formulaire est prêt.</p>
+                    </div>
+                </form>
+            </section>
+
+            <aside class="admin-sidebar">
+                <section class="admin-panel">
+                    <div class="section-heading section-heading--admin">
+                        <span></span>
+                        <h2>Lien catalogue</h2>
+                        <span></span>
+                    </div>
+                    <p class="admin-helper">Le catalogue public lu par la boutique se trouve maintenant ici :</p>
+                    <code class="admin-code" data-admin-catalog-url>Chargement...</code>
+                </section>
+
+                <section class="admin-panel">
+                    <div class="section-heading section-heading--admin">
+                        <span></span>
+                        <h2>Prévisualisation photos</h2>
+                        <span></span>
+                    </div>
+                    <div class="admin-photo-preview" data-admin-photo-preview>
+                        <p class="admin-helper">Les photos envoyees apparaitront ici.</p>
+                    </div>
+                </section>
+
+                <section class="admin-panel">
+                    <div class="section-heading section-heading--admin">
+                        <span></span>
+                        <h2>Derniers articles locaux</h2>
+                        <span></span>
+                    </div>
+                    <div class="admin-recent-list" data-admin-recent>
+                        <p class="admin-helper">Chargement...</p>
+                    </div>
+                </section>
+            </aside>
+        </section>
+    </main>
+
+    <script src="assets/js/checkout-config.js?v=3"></script>
+    <script src="assets/js/admin-catalog.js?v=1"></script>
+</body>
+</html>

@@ -9,11 +9,16 @@ export async function readJsonBody(request) {
 }
 
 export async function readRawBody(request) {
+  const buffer = await readBinaryBody(request);
+  return buffer.toString("utf8");
+}
+
+export async function readBinaryBody(request) {
   const chunks = [];
   for await (const chunk of request) {
     chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
   }
-  return Buffer.concat(chunks).toString("utf8");
+  return Buffer.concat(chunks);
 }
 
 export function sendJson(response, statusCode, payload) {
@@ -22,7 +27,7 @@ export function sendJson(response, statusCode, payload) {
     "Content-Type": "application/json; charset=utf-8",
     "Content-Length": Buffer.byteLength(body),
     "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Headers": "Content-Type",
+    "Access-Control-Allow-Headers": "Content-Type, X-File-Name, X-Admin-Key",
     "Access-Control-Allow-Methods": "GET,POST,OPTIONS"
   });
   response.end(body);
@@ -32,9 +37,20 @@ export function sendText(response, statusCode, text, headers = {}) {
   response.writeHead(statusCode, {
     "Content-Type": "text/plain; charset=utf-8",
     "Content-Length": Buffer.byteLength(text),
+    "Access-Control-Allow-Origin": "*",
     ...headers
   });
   response.end(text);
+}
+
+export function sendBuffer(response, statusCode, buffer, headers = {}) {
+  const payload = Buffer.isBuffer(buffer) ? buffer : Buffer.from(buffer || "");
+  response.writeHead(statusCode, {
+    "Content-Length": payload.length,
+    "Access-Control-Allow-Origin": "*",
+    ...headers
+  });
+  response.end(payload);
 }
 
 export function redirect(response, location) {
@@ -62,7 +78,7 @@ export function handleError(response, error) {
 export function noContent(response) {
   response.writeHead(204, {
     "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Headers": "Content-Type",
+    "Access-Control-Allow-Headers": "Content-Type, X-File-Name, X-Admin-Key",
     "Access-Control-Allow-Methods": "GET,POST,OPTIONS"
   });
   response.end();

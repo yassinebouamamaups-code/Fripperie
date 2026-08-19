@@ -8,16 +8,22 @@ const backendRoot = path.resolve(__dirname, "..");
 const dataDir = path.join(backendRoot, "data");
 const invoicesDir = path.join(dataDir, "invoices");
 const ordersFile = path.join(dataDir, "orders.json");
+const uploadsDir = path.join(dataDir, "uploads");
+const catalogUploadsDir = path.join(uploadsDir, "catalog");
 const envFile = path.join(backendRoot, ".env");
 
 loadDotEnv(envFile);
 ensureDir(dataDir);
 ensureDir(invoicesDir);
+ensureDir(uploadsDir);
+ensureDir(catalogUploadsDir);
 
 export const config = {
   backendRoot,
   dataDir,
   invoicesDir,
+  uploadsDir,
+  catalogUploadsDir,
   ordersFile,
   nodeEnv: process.env.NODE_ENV || "development",
   port: Number.parseInt(process.env.PORT || "3001", 10),
@@ -25,6 +31,7 @@ export const config = {
   siteBaseUrl: requiredUrl(process.env.SITE_BASE_URL || "http://127.0.0.1:5500"),
   catalogSourceUrl: process.env.CATALOG_SOURCE_URL || "",
   catalogWriteFile: resolveOptionalPath(process.env.CATALOG_WRITE_FILE || ""),
+  adminPassword: process.env.ADMIN_PASSWORD || "",
   invoicePrefix: process.env.INVOICE_PREFIX || "FAC",
   paypal: {
     environment: (process.env.PAYPAL_ENV || "sandbox").toLowerCase(),
