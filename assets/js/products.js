@@ -340,7 +340,11 @@
         return parsed > 0 ? formatPrice(parsed) : clean(value);
     }
 
-    function driveImageUrl(fileId, width = 1600) {
+    function driveImageUrl(fileId) {
+        return `https://drive.google.com/uc?export=view&id=${fileId}`;
+    }
+
+    function driveThumbnailUrl(fileId, width = 1600) {
         return `https://drive.google.com/thumbnail?id=${fileId}&sz=w${width}`;
     }
 
@@ -374,7 +378,7 @@
         if (!normalized) return "";
 
         const fileId = extractDriveId(normalized);
-        return fileId ? driveImageUrl(fileId, width) : normalized;
+        return fileId ? driveImageUrl(fileId) : normalized;
     }
 
     function photoVariant(photo, variant = "detail") {
@@ -789,6 +793,13 @@
         document.addEventListener("error", (event) => {
             const image = event.target;
             if (!(image instanceof HTMLImageElement)) return;
+
+            const driveFileId = extractDriveId(image.currentSrc || image.src);
+            if (driveFileId && image.dataset.driveFallbackApplied !== "true") {
+                image.dataset.driveFallbackApplied = "true";
+                image.src = driveThumbnailUrl(driveFileId, 1600);
+                return;
+            }
 
             const fallbackPhoto = image.dataset.fallbackPhoto;
             if (!fallbackPhoto || image.dataset.fallbackApplied === "true") return;
