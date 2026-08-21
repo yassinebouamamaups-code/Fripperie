@@ -378,7 +378,7 @@
         if (!normalized) return "";
 
         const fileId = extractDriveId(normalized);
-        return fileId ? driveImageUrl(fileId) : normalized;
+        return fileId ? driveThumbnailUrl(fileId, width) : normalized;
     }
 
     function photoVariant(photo, variant = "detail") {
@@ -414,7 +414,7 @@
 
     function photosOf(product) {
         const remotePhotos = (product.photos || "")
-            .split(/[|;]/)
+            .split(/\s*(?:[|;]|\r?\n|,\s*(?=https?:\/\/|www\.|drive\.google\.com))\s*/i)
             .map((photo) => normalizePhotoUrl(photo))
             .filter(Boolean);
 
@@ -771,6 +771,8 @@
             const card = thumb.closest(".catalog-card, .product-detail-card");
             if (!card) return;
             const image = card.querySelector(".catalog-card__image, .product-detail__image");
+            image.dataset.driveFallbackApplied = "false";
+            image.dataset.fallbackApplied = "false";
             image.src = thumb.dataset.photo;
             card.querySelectorAll(".catalog-card__thumb, .product-detail__thumb").forEach((button) => button.classList.remove("is-active"));
             thumb.classList.add("is-active");
